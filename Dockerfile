@@ -17,5 +17,4 @@ ENV MMJ_DB_PATH=/data/mmj.db
 ENV PORT=8080
 EXPOSE 8080
 USER nonroot:nonroot
-VOLUME ["/data"]
 ENTRYPOINT ["/app/match-my-jam"]
