@@ -1,0 +1,7 @@
+match-my-jam
+*.db
+*.db-*
+.env
+.env.local
+tmp/
+data/

@@ -1,0 +1,12 @@
+{{define "login.html"}}{{template "layout" .}}{{end}}
+{{define "title"}}Log in · Match My Jam{{end}}
+{{define "content"}}
+<section class="auth">
+  <h1>Log in</h1>
+  <p class="sub">Pick a provider. If you log in with both, we'll link them automatically.</p>
+  <div class="provider-stack">
+    <a class="btn primary" href="/auth/spotify/start">Continue with Spotify</a>
+    <button class="btn ghost" type="button" disabled>Continue with Google <span class="soon">soon</span></button>
+  </div>
+</section>
+{{end}}

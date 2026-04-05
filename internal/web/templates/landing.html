@@ -1,0 +1,18 @@
+{{define "landing.html"}}{{template "layout" .}}{{end}}
+{{define "title"}}Match My Jam — find the music you share{{end}}
+{{define "content"}}
+<section class="hero">
+  <h1>Find the music <span class="grad">you share</span>.</h1>
+  <p class="sub">Connect your Spotify, pull your whole library, add a friend — and see what overlaps. Playlists, hearted songs, saved albums. The jams, not the guesswork.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="/auth/spotify/start">Continue with Spotify</a>
+    <a class="btn ghost" href="/login">Other options</a>
+  </div>
+  <p class="fine">Your data stays in your account. We never post on your behalf.</p>
+</section>
+<section class="tiles">
+  <div class="tile"><h3>Sync everything</h3><p>Playlists, liked songs, and saved albums — the whole library, not just last month.</p></div>
+  <div class="tile"><h3>Add a friend</h3><p>Send a request in the app. Once they accept, we compute the overlap.</p></div>
+  <div class="tile"><h3>More sources soon</h3><p>Apple Music and YouTube Music are on the roadmap. One account, all your taste.</p></div>
+</section>
+{{end}}

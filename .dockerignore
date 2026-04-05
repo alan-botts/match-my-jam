@@ -1,0 +1,8 @@
+.git
+.gitignore
+*.db
+*.db-*
+data/
+tmp/
+match-my-jam
+README.md

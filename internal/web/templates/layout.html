@@ -1,0 +1,32 @@
+{{define "layout"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{block "title" .}}Match My Jam{{end}}</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="/">Match My Jam</a>
+  <nav>
+    {{if .User}}
+      <span class="greet">{{.User.DisplayName}}</span>
+      <form action="/logout" method="post" class="inline">
+        <button class="ghost" type="submit">Log out</button>
+      </form>
+    {{else}}
+      <a class="ghost" href="/login">Log in</a>
+    {{end}}
+  </nav>
+</header>
+<main>
+  {{block "content" .}}{{end}}
+</main>
+<footer class="site">
+  <span>Match My Jam · find the music you share</span>
+  <a href="https://github.com/alan-botts/match-my-jam" target="_blank" rel="noopener">GitHub</a>
+</footer>
+</body>
+</html>
+{{end}}

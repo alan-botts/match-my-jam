@@ -1,0 +1,38 @@
+{{define "dashboard.html"}}{{template "layout" .}}{{end}}
+{{define "title"}}Dashboard · Match My Jam{{end}}
+{{define "content"}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>Hey, {{.User.DisplayName}} 👋</h1>
+    <form action="/sync/spotify" method="post" class="inline">
+      <button class="btn primary small" type="submit">Resync Spotify</button>
+    </form>
+  </header>
+
+  <div class="stat-grid">
+    <div class="stat"><span class="num">{{.Stats.Playlists}}</span><span class="lbl">Playlists</span></div>
+    <div class="stat"><span class="num">{{.Stats.Liked}}</span><span class="lbl">Hearted</span></div>
+    <div class="stat"><span class="num">{{.Stats.Albums}}</span><span class="lbl">Saved albums</span></div>
+  </div>
+
+  <section class="card">
+    <h3>Last sync</h3>
+    {{if .LastSync}}
+      <p>
+        Status: <strong class="status-{{.LastSync.Status}}">{{.LastSync.Status}}</strong><br>
+        Started: {{.LastSync.StartedAt.Format "Jan 2, 3:04 PM"}}<br>
+        {{if .LastSync.FinishedAt}}Finished: {{fmtTime .LastSync.FinishedAt}}<br>{{end}}
+        Playlists: {{.LastSync.PlaylistsSynced}} · Liked: {{.LastSync.LikedSynced}} · Albums: {{.LastSync.AlbumsSynced}}
+        {{if .LastSync.Error}}<br><span class="err">{{.LastSync.Error}}</span>{{end}}
+      </p>
+    {{else}}
+      <p>No sync yet — one should be running in the background. Refresh in a minute.</p>
+    {{end}}
+  </section>
+
+  <section class="card">
+    <h3>Friends</h3>
+    <p class="muted">Friend requests and overlap view arriving in v2. Sync is the foundation — once you and a friend are both on here, matching is one query away.</p>
+  </section>
+</section>
+{{end}}
