@@ -1,0 +1,41 @@
+{{define "liked.html"}}
+{{template "header" .}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>Liked Tracks</h1>
+    <a class="btn ghost small" href="/dashboard">&larr; Dashboard</a>
+  </header>
+
+  {{if .Tracks}}
+  <div class="card">
+    <table class="lib-table">
+      <thead>
+        <tr>
+          <th>Track</th>
+          <th>Artist</th>
+          <th>Album</th>
+          <th class="num-col">Duration</th>
+          <th>Added</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Tracks}}
+        <tr>
+          <td>{{.TrackName}}</td>
+          <td class="dim">{{.ArtistName}}</td>
+          <td class="dim">{{.AlbumName}}</td>
+          <td class="num-col">{{fmtDuration .DurationMs}}</td>
+          <td class="dim">{{fmtTime .AddedAt}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="card">
+    <p class="muted">No liked tracks synced yet. Try syncing your Spotify library from the dashboard.</p>
+  </div>
+  {{end}}
+</section>
+{{template "footer" .}}
+{{end}}

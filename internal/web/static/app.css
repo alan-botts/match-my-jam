@@ -159,3 +159,20 @@ form.inline { display: inline; }
 .btn.danger { background: transparent; color: var(--accent-3); border: 1px solid rgba(255,31,74,0.45); }
 .btn.danger:hover { background: rgba(255,31,74,0.12); }
 .btn.small { padding: 10px 16px; font-size: 14px; }
+
+/* Clickable stat cards */
+a.stat-link { text-decoration: none; transition: border-color .15s ease, transform .08s ease; }
+a.stat-link:hover { border-color: var(--accent-1); transform: translateY(-2px); }
+a.stat-link:hover .lbl { color: var(--accent-1); }
+
+/* Library tables */
+.lib-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.lib-table th { text-align: left; color: var(--fg-mute); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; border-bottom: 1px solid var(--border); font-weight: 600; }
+.lib-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.lib-table tbody tr:last-child td { border-bottom: none; }
+.lib-table tbody tr:hover { background: var(--bg-3); }
+.lib-table .num-col { text-align: right; }
+.lib-table .dim { color: var(--fg-dim); }
+.lib-table a { color: var(--fg); }
+.lib-table a:hover { color: var(--accent-1); }
+.dim { color: var(--fg-dim); }

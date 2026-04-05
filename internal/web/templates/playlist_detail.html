@@ -1,0 +1,49 @@
+{{define "playlist_detail.html"}}
+{{template "header" .}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>{{.Playlist.Name}}</h1>
+    <a class="btn ghost small" href="/library/playlists">&larr; All Playlists</a>
+  </header>
+
+  <div class="card" style="margin-bottom:18px">
+    <p>
+      <span class="dim">Owner:</span> {{.Playlist.OwnerName}} &middot;
+      <span class="dim">Tracks:</span> {{.Playlist.TrackCount}} &middot;
+      {{if .Playlist.IsPublic}}Public{{else}}Private{{end}}{{if .Playlist.IsCollaborative}} · Collaborative{{end}}
+    </p>
+  </div>
+
+  {{if .Tracks}}
+  <div class="card">
+    <table class="lib-table">
+      <thead>
+        <tr>
+          <th class="num-col">#</th>
+          <th>Track</th>
+          <th>Artist</th>
+          <th>Album</th>
+          <th class="num-col">Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Tracks}}
+        <tr>
+          <td class="num-col dim">{{.Position}}</td>
+          <td>{{.TrackName}}</td>
+          <td class="dim">{{.ArtistName}}</td>
+          <td class="dim">{{.AlbumName}}</td>
+          <td class="num-col">{{fmtDuration .DurationMs}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="card">
+    <p class="muted">No tracks in this playlist.</p>
+  </div>
+  {{end}}
+</section>
+{{template "footer" .}}
+{{end}}

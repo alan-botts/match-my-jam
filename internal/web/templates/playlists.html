@@ -1,0 +1,41 @@
+{{define "playlists.html"}}
+{{template "header" .}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>Your Playlists</h1>
+    <a class="btn ghost small" href="/dashboard">&larr; Dashboard</a>
+  </header>
+
+  {{if .Playlists}}
+  <div class="card">
+    <table class="lib-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Owner</th>
+          <th class="num-col">Tracks</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Playlists}}
+        <tr>
+          <td><a href="/library/playlists/{{.ID}}">{{.Name}}</a></td>
+          <td class="dim">{{.OwnerName}}</td>
+          <td class="num-col">{{.TrackCount}}</td>
+          <td class="dim">{{if .IsPublic}}Public{{else}}Private{{end}}{{if .IsCollaborative}} · Collab{{end}}</td>
+          <td><a class="btn ghost small" href="/library/playlists/{{.ID}}">View</a></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="card">
+    <p class="muted">No playlists synced yet. Try syncing your Spotify library from the dashboard.</p>
+  </div>
+  {{end}}
+</section>
+{{template "footer" .}}
+{{end}}

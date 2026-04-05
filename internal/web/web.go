@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"embed"
 	"encoding/base64"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -85,6 +86,11 @@ func (s *Server) Routes() http.Handler {
 		r.Post("/friends/{id}/respond", s.handleFriendRespond)
 		r.Get("/friends/{id}/overlap", s.handleOverlap)
 
+		r.Get("/library/playlists", s.handlePlaylists)
+		r.Get("/library/playlists/{id}", s.handlePlaylistDetail)
+		r.Get("/library/liked", s.handleLiked)
+		r.Get("/library/albums", s.handleAlbums)
+
 		r.Get("/settings", s.handleSettings)
 		r.Post("/settings/disconnect/{id}", s.handleDisconnect)
 		r.Post("/settings/delete-account", s.handleDeleteAccount)
@@ -143,14 +149,18 @@ func (s *Server) render(w http.ResponseWriter, name string, data map[string]inte
 }
 
 var defaultTitles = map[string]string{
-	"landing.html":   "Match My Jam — find the music you share",
-	"login.html":     "Log in · Match My Jam",
-	"dashboard.html": "Dashboard · Match My Jam",
-	"friends.html":   "Friends · Match My Jam",
-	"overlap.html":   "Overlap · Match My Jam",
-	"settings.html":  "Settings · Match My Jam",
-	"invite.html":    "Invite · Match My Jam",
-	"join.html":      "Join Match My Jam",
+	"landing.html":         "Match My Jam — find the music you share",
+	"login.html":           "Log in · Match My Jam",
+	"dashboard.html":       "Dashboard · Match My Jam",
+	"friends.html":         "Friends · Match My Jam",
+	"overlap.html":         "Overlap · Match My Jam",
+	"settings.html":        "Settings · Match My Jam",
+	"invite.html":          "Invite · Match My Jam",
+	"join.html":            "Join Match My Jam",
+	"playlists.html":       "Playlists · Match My Jam",
+	"playlist_detail.html": "Playlist · Match My Jam",
+	"liked.html":           "Liked Tracks · Match My Jam",
+	"albums.html":          "Saved Albums · Match My Jam",
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -300,6 +310,12 @@ func funcs() template.FuncMap {
 				return "—"
 			}
 			return t.Format("Jan 2, 3:04 PM")
+		},
+		"fmtDuration": func(ms int) string {
+			totalSec := ms / 1000
+			m := totalSec / 60
+			sec := totalSec % 60
+			return fmt.Sprintf("%d:%02d", m, sec)
 		},
 	}
 }

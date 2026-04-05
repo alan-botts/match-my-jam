@@ -1,0 +1,37 @@
+{{define "albums.html"}}
+{{template "header" .}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>Saved Albums</h1>
+    <a class="btn ghost small" href="/dashboard">&larr; Dashboard</a>
+  </header>
+
+  {{if .Albums}}
+  <div class="card">
+    <table class="lib-table">
+      <thead>
+        <tr>
+          <th>Album</th>
+          <th>Artist</th>
+          <th>Added</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Albums}}
+        <tr>
+          <td>{{.AlbumName}}</td>
+          <td class="dim">{{.ArtistName}}</td>
+          <td class="dim">{{fmtTime .AddedAt}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <div class="card">
+    <p class="muted">No saved albums synced yet. Try syncing your Spotify library from the dashboard.</p>
+  </div>
+  {{end}}
+</section>
+{{template "footer" .}}
+{{end}}

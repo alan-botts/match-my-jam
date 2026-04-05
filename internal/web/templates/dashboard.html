@@ -9,9 +9,9 @@
   </header>
 
   <div class="stat-grid">
-    <div class="stat"><span class="num">{{.Stats.Playlists}}</span><span class="lbl">Playlists</span></div>
-    <div class="stat"><span class="num">{{.Stats.Liked}}</span><span class="lbl">Hearted</span></div>
-    <div class="stat"><span class="num">{{.Stats.Albums}}</span><span class="lbl">Saved albums</span></div>
+    <a class="stat stat-link" href="/library/playlists"><span class="num">{{.Stats.Playlists}}</span><span class="lbl">Playlists</span></a>
+    <a class="stat stat-link" href="/library/liked"><span class="num">{{.Stats.Liked}}</span><span class="lbl">Hearted</span></a>
+    <a class="stat stat-link" href="/library/albums"><span class="num">{{.Stats.Albums}}</span><span class="lbl">Saved albums</span></a>
   </div>
 
   <section class="card">
