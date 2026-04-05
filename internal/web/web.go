@@ -164,19 +164,26 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	s.Sessions.Clear(w)
+	// Nuke every app cookie so re-auth starts from a clean slate.
+	for _, name := range []string{stateCookieName, googleStateCookie, inviteCookieName} {
+		http.SetCookie(w, &http.Cookie{Name: name, Value: "", Path: "/", MaxAge: -1})
+	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 const stateCookieName = "mmj_oauth_state"
 
 func (s *Server) handleSpotifyStart(w http.ResponseWriter, r *http.Request) {
+	secure := strings.HasPrefix(s.Cfg.BaseURL, "https://")
+	// Clear any stale state cookie before setting a fresh one.
+	http.SetCookie(w, &http.Cookie{Name: stateCookieName, Value: "", Path: "/", MaxAge: -1})
 	state := randomState()
 	http.SetCookie(w, &http.Cookie{
 		Name:     stateCookieName,
 		Value:    state,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   strings.HasPrefix(s.Cfg.BaseURL, "https://"),
+		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
 		Expires:  time.Now().Add(10 * time.Minute),
 	})
