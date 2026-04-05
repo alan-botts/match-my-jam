@@ -1,0 +1,46 @@
+{{define "settings.html"}}{{template "layout" .}}{{end}}
+{{define "title"}}Settings · Match My Jam{{end}}
+{{define "content"}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>Settings</h1>
+  </header>
+
+  {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+  <section class="card">
+    <h3>Your account</h3>
+    <p><strong>{{.User.DisplayName}}</strong><br><span class="muted">{{.User.Email}}</span></p>
+  </section>
+
+  <section class="card">
+    <h3>Connected sign-ins</h3>
+    <ul class="friend-list">
+      {{range .Accounts}}
+      <li>
+        <div>
+          <strong>{{.Provider}}</strong>
+          {{if .ProviderEmail}}<span class="muted"> · {{.ProviderEmail}}</span>{{end}}
+        </div>
+        <form method="post" action="/settings/disconnect/{{.ID}}" class="inline">
+          <button class="ghost" type="submit">Disconnect</button>
+        </form>
+      </li>
+      {{end}}
+    </ul>
+    <p class="muted">Add more by logging in with another provider — same email auto-links.</p>
+    <div class="cta-row" style="margin-top:14px;justify-content:flex-start">
+      <a class="btn ghost small" href="/auth/spotify/start">Link Spotify</a>
+      <a class="btn ghost small" href="/auth/google/start">Link Google</a>
+    </div>
+  </section>
+
+  <section class="card danger">
+    <h3>Delete account</h3>
+    <p class="muted">Permanently removes your account and all synced data. Cannot be undone.</p>
+    <form method="post" action="/settings/delete-account" class="inline" onsubmit="return confirm('Delete your account and all data?')">
+      <button class="btn danger small" type="submit">Delete account</button>
+    </form>
+  </section>
+</section>
+{{end}}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/alan-botts/match-my-jam/internal/config"
+	"github.com/alan-botts/match-my-jam/internal/googleauth"
 	"github.com/alan-botts/match-my-jam/internal/session"
 	"github.com/alan-botts/match-my-jam/internal/spotify"
 	"github.com/alan-botts/match-my-jam/internal/store"
@@ -28,6 +29,7 @@ type Server struct {
 	Sessions     *session.Manager
 	Store        *store.Store
 	SpotifyOAuth *oauth2.Config
+	GoogleOAuth  *oauth2.Config
 	SpotifySync  *mmjsync.SpotifySyncer
 	Templates    *template.Template
 }
@@ -36,6 +38,10 @@ func New(cfg *config.Config, s *store.Store) (*Server, error) {
 	secure := strings.HasPrefix(cfg.BaseURL, "https://")
 	sm := session.New(cfg.SessionHashKey, cfg.SessionBlockKey, secure)
 	sp := spotify.OAuthConfig(cfg.SpotifyClientID, cfg.SpotifyClientSecret, cfg.BaseURL+"/auth/spotify/callback")
+	var gp *oauth2.Config
+	if cfg.GoogleClientID != "" && cfg.GoogleClientSecret != "" {
+		gp = googleauth.OAuthConfig(cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.BaseURL+"/auth/google/callback")
+	}
 	tpl, err := template.New("").Funcs(funcs()).ParseFS(assets, "templates/*.html")
 	if err != nil {
 		return nil, err
@@ -45,6 +51,7 @@ func New(cfg *config.Config, s *store.Store) (*Server, error) {
 		Sessions:     sm,
 		Store:        s,
 		SpotifyOAuth: sp,
+		GoogleOAuth:  gp,
 		SpotifySync:  &mmjsync.SpotifySyncer{Store: s, OAuthConf: sp},
 		Templates:    tpl,
 	}, nil
@@ -61,11 +68,22 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/auth/spotify/start", s.handleSpotifyStart)
 	r.Get("/auth/spotify/callback", s.handleSpotifyCallback)
+	r.Get("/auth/google/start", s.handleGoogleStart)
+	r.Get("/auth/google/callback", s.handleGoogleCallback)
 
 	r.Group(func(r chi.Router) {
 		r.Use(s.requireAuth)
 		r.Get("/dashboard", s.handleDashboard)
 		r.Post("/sync/spotify", s.handleSyncSpotify)
+
+		r.Get("/friends", s.handleFriends)
+		r.Post("/friends/request", s.handleFriendRequest)
+		r.Post("/friends/{id}/respond", s.handleFriendRespond)
+		r.Get("/friends/{id}/overlap", s.handleOverlap)
+
+		r.Get("/settings", s.handleSettings)
+		r.Post("/settings/disconnect/{id}", s.handleDisconnect)
+		r.Post("/settings/delete-account", s.handleDeleteAccount)
 	})
 
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {

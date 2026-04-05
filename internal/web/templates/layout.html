@@ -11,7 +11,9 @@
   <a class="logo" href="/">Match My Jam</a>
   <nav>
     {{if .User}}
-      <span class="greet">{{.User.DisplayName}}</span>
+      <a class="navlink" href="/dashboard">Dashboard</a>
+      <a class="navlink" href="/friends">Friends</a>
+      <a class="navlink" href="/settings">Settings</a>
       <form action="/logout" method="post" class="inline">
         <button class="ghost" type="submit">Log out</button>
       </form>

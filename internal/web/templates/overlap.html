@@ -1,0 +1,55 @@
+{{define "overlap.html"}}{{template "layout" .}}{{end}}
+{{define "title"}}{{.Friend.DisplayName}} · Overlap · Match My Jam{{end}}
+{{define "content"}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>You &times; {{.Friend.DisplayName}}</h1>
+    <a class="btn ghost small" href="/friends">← All friends</a>
+  </header>
+
+  <div class="stat-grid">
+    <div class="stat"><span class="num">{{len .Overlap.LikedTracks}}</span><span class="lbl">Shared likes</span></div>
+    <div class="stat"><span class="num">{{len .Overlap.Albums}}</span><span class="lbl">Shared albums</span></div>
+    <div class="stat"><span class="num">{{len .Overlap.PlaylistHits}}</span><span class="lbl">Playlist overlap</span></div>
+  </div>
+
+  <section class="card">
+    <h3>Songs you both ❤️</h3>
+    {{if .Overlap.LikedTracks}}
+      <ul class="track-list">
+        {{range .Overlap.LikedTracks}}
+        <li><strong>{{.TrackName}}</strong> <span class="muted">· {{.ArtistName}} · {{.AlbumName}}</span></li>
+        {{end}}
+      </ul>
+    {{else}}
+      <p class="muted">No shared liked songs yet. If one of you just signed up, wait for the sync to finish.</p>
+    {{end}}
+  </section>
+
+  <section class="card">
+    <h3>Albums you both saved</h3>
+    {{if .Overlap.Albums}}
+      <ul class="track-list">
+        {{range .Overlap.Albums}}
+        <li><strong>{{.AlbumName}}</strong> <span class="muted">· {{.ArtistName}}</span></li>
+        {{end}}
+      </ul>
+    {{else}}
+      <p class="muted">No shared saved albums.</p>
+    {{end}}
+  </section>
+
+  <section class="card">
+    <h3>Tracks in both your playlists</h3>
+    {{if .Overlap.PlaylistHits}}
+      <ul class="track-list">
+        {{range .Overlap.PlaylistHits}}
+        <li><strong>{{.TrackName}}</strong> <span class="muted">· {{.ArtistName}} · {{.AlbumName}}</span></li>
+        {{end}}
+      </ul>
+    {{else}}
+      <p class="muted">No playlist overlap yet.</p>
+    {{end}}
+  </section>
+</section>
+{{end}}

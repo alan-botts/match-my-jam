@@ -1,0 +1,82 @@
+{{define "friends.html"}}{{template "layout" .}}{{end}}
+{{define "title"}}Friends · Match My Jam{{end}}
+{{define "content"}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>Friends</h1>
+  </header>
+
+  {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+  <section class="card">
+    <h3>Add a friend</h3>
+    <p class="muted">Enter the email they used to sign in. They'll see the request when they log in.</p>
+    <form method="post" action="/friends/request" class="row-form">
+      <input type="email" name="email" placeholder="friend@example.com" required>
+      <button class="btn primary small" type="submit">Send request</button>
+    </form>
+  </section>
+
+  {{if .Incoming}}
+  <section class="card">
+    <h3>Incoming requests</h3>
+    <ul class="friend-list">
+      {{range .Incoming}}
+      <li>
+        <div>
+          <strong>{{.OtherUser.DisplayName}}</strong>
+          <span class="muted"> · {{.OtherUser.Email}}</span>
+        </div>
+        <div class="row-btns">
+          <form method="post" action="/friends/{{.ID}}/respond" class="inline">
+            <input type="hidden" name="action" value="accept">
+            <button class="btn primary small" type="submit">Accept</button>
+          </form>
+          <form method="post" action="/friends/{{.ID}}/respond" class="inline">
+            <input type="hidden" name="action" value="decline">
+            <button class="ghost" type="submit">Decline</button>
+          </form>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+  </section>
+  {{end}}
+
+  {{if .Outgoing}}
+  <section class="card">
+    <h3>Outgoing requests</h3>
+    <ul class="friend-list">
+      {{range .Outgoing}}
+      <li>
+        <div>
+          <strong>{{.OtherUser.DisplayName}}</strong>
+          <span class="muted"> · {{.OtherUser.Email}}</span>
+        </div>
+        <span class="tag">pending</span>
+      </li>
+      {{end}}
+    </ul>
+  </section>
+  {{end}}
+
+  <section class="card">
+    <h3>Your friends</h3>
+    {{if .Friends}}
+      <ul class="friend-list">
+        {{range .Friends}}
+        <li>
+          <div>
+            <strong>{{.DisplayName}}</strong>
+            <span class="muted"> · {{.Email}}</span>
+          </div>
+          <a class="btn ghost small" href="/friends/{{.ID}}/overlap">See overlap</a>
+        </li>
+        {{end}}
+      </ul>
+    {{else}}
+      <p class="muted">No friends yet. Send your first request above.</p>
+    {{end}}
+  </section>
+</section>
+{{end}}
