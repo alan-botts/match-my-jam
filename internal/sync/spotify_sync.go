@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/alan-botts/match-my-jam/internal/spotify"
@@ -99,6 +101,13 @@ func (s *SpotifySyncer) upsertPlaylists(ctx context.Context, userID int64, pls [
 
 		tracks, err := client.PlaylistTracks(ctx, p.ID)
 		if err != nil {
+			// Spotify returns 403 for playlists its new-dev-mode quota
+			// doesn't cover (curated content, some followed playlists).
+			// Skip those so the rest of the sync can still finish.
+			if isAccessError(err) {
+				log.Printf("skipping playlist %q (%s): %v", p.Name, p.ID, err)
+				continue
+			}
 			return fmt.Errorf("playlist %s tracks: %w", p.Name, err)
 		}
 		if err := s.replacePlaylistTracks(ctx, playlistID, tracks); err != nil {
@@ -106,6 +115,14 @@ func (s *SpotifySyncer) upsertPlaylists(ctx context.Context, userID int64, pls [
 		}
 	}
 	return nil
+}
+
+func isAccessError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "403") || strings.Contains(msg, "404")
 }
 
 func (s *SpotifySyncer) replacePlaylistTracks(ctx context.Context, playlistID int64, tracks []spotify.PlaylistTrack) error {
