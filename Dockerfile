@@ -10,11 +10,11 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/match-my-jam ./cmd/match-my-jam
 
-FROM gcr.io/distroless/static-debian12:nonroot
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates tzdata && mkdir -p /data
 WORKDIR /app
 COPY --from=build /out/match-my-jam /app/match-my-jam
 ENV MMJ_DB_PATH=/data/mmj.db
 ENV PORT=8080
 EXPOSE 8080
-USER nonroot:nonroot
 ENTRYPOINT ["/app/match-my-jam"]
