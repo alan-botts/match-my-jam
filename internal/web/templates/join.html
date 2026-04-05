@@ -1,0 +1,13 @@
+{{define "join.html"}}
+{{template "header" .}}
+<section class="hero">
+  <h1><span class="grad">{{.Inviter.DisplayName}}</span> wants to find your shared jams.</h1>
+  <p class="sub">Sign in and you'll be friends automatically. Then we'll pull both your Spotify libraries and show you the overlap.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="/auth/spotify/start">Continue with Spotify</a>
+    <a class="btn ghost" href="/auth/google/start">Continue with Google</a>
+  </div>
+  <p class="fine">Your data stays in your account. We never post on your behalf.</p>
+</section>
+{{template "footer" .}}
+{{end}}

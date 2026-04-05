@@ -71,11 +71,14 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/auth/google/start", s.handleGoogleStart)
 	r.Get("/auth/google/callback", s.handleGoogleCallback)
 
+	r.Get("/join/{token}", s.handleJoin)
+
 	r.Group(func(r chi.Router) {
 		r.Use(s.requireAuth)
 		r.Get("/dashboard", s.handleDashboard)
 		r.Post("/sync/spotify", s.handleSyncSpotify)
 
+		r.Get("/invite", s.handleInvite)
 		r.Get("/friends", s.handleFriends)
 		r.Post("/friends/request", s.handleFriendRequest)
 		r.Post("/friends/{id}/respond", s.handleFriendRespond)
@@ -139,6 +142,8 @@ var defaultTitles = map[string]string{
 	"friends.html":   "Friends · Match My Jam",
 	"overlap.html":   "Overlap · Match My Jam",
 	"settings.html":  "Settings · Match My Jam",
+	"invite.html":    "Invite · Match My Jam",
+	"join.html":      "Join Match My Jam",
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
@@ -226,6 +231,7 @@ func (s *Server) handleSpotifyCallback(w http.ResponseWriter, r *http.Request) {
 	if err := s.Sessions.Set(w, session.Data{UserID: user.ID}); err != nil {
 		log.Printf("set session: %v", err)
 	}
+	s.applyInviteCookie(w, r, user.ID)
 
 	// Kick off an initial sync in the background.
 	go func(uid int64) {

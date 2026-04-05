@@ -1,0 +1,62 @@
+{{define "invite.html"}}
+{{template "header" .}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>Invite a friend</h1>
+  </header>
+
+  <section class="card">
+    <h3>Your share link</h3>
+    <p class="muted">Send this to anyone. When they open it and sign up, you two are friends automatically — no request needed.</p>
+    <div class="invite-link">
+      <input id="invite-input" type="text" readonly value="{{.Link}}">
+      <button class="btn primary small" id="copy-btn" type="button" data-link="{{.Link}}">Copy</button>
+      <button class="btn ghost small" id="share-btn" type="button" data-link="{{.Link}}">Share…</button>
+    </div>
+    <p class="muted" id="copy-status"></p>
+  </section>
+
+  <section class="card">
+    <h3>How it works</h3>
+    <ol class="steps">
+      <li>You send the link.</li>
+      <li>They open it in a browser.</li>
+      <li>They click <em>Continue with Spotify</em> (or Google).</li>
+      <li>The moment they land on their dashboard, you're already friends — you'll see them on your <a href="/friends">Friends</a> page.</li>
+    </ol>
+  </section>
+</section>
+<script>
+(function() {
+  var link = {{.Link}};
+  var copyBtn = document.getElementById('copy-btn');
+  var shareBtn = document.getElementById('share-btn');
+  var status = document.getElementById('copy-status');
+  var input = document.getElementById('invite-input');
+
+  copyBtn.addEventListener('click', function() {
+    navigator.clipboard.writeText(link).then(function() {
+      status.textContent = 'Copied.';
+      input.select();
+    }).catch(function() {
+      input.select();
+      document.execCommand('copy');
+      status.textContent = 'Copied.';
+    });
+  });
+
+  if (navigator.share) {
+    shareBtn.addEventListener('click', function() {
+      navigator.share({
+        title: 'Match My Jam',
+        text: 'Find out which songs we both love.',
+        url: link
+      }).catch(function() { /* user cancelled */ });
+    });
+  } else {
+    shareBtn.style.display = 'none';
+  }
+})();
+</script>
+{{template "footer" .}}
+{{end}}

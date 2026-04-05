@@ -103,8 +103,22 @@ form.inline { display: inline; }
 .status-running { color: var(--accent-2); }
 .err { color: var(--accent-3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
 
-.navlink { color: var(--fg-dim); font-size: 14px; }
+.navlink { color: var(--fg-dim); font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
 .navlink:hover { color: var(--accent-1); }
+.invite-nav svg { display: block; }
+
+.invite-link {
+  display: flex; gap: 10px; margin-top: 12px; align-items: center; flex-wrap: wrap;
+}
+.invite-link input {
+  flex: 1; min-width: 240px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--fg); padding: 12px 14px; border-radius: var(--radius-sm);
+  font-size: 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.invite-link input:focus { outline: none; border-color: var(--accent-1); }
+.steps { color: var(--fg-dim); padding-left: 20px; margin: 6px 0 0; }
+.steps li { margin: 6px 0; }
 
 .flash {
   background: linear-gradient(90deg, rgba(255,61,110,0.18), rgba(255,106,61,0.18));

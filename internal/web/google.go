@@ -64,6 +64,7 @@ func (s *Server) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		log.Printf("save token: %v", err)
 	}
 	_ = s.Sessions.Set(w, session.Data{UserID: user.ID})
+	s.applyInviteCookie(w, r, user.ID)
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -36,10 +37,12 @@ func migrate(conn *sql.DB) error {
 			display_name TEXT NOT NULL DEFAULT '',
 			email TEXT NOT NULL DEFAULT '',
 			avatar_url TEXT NOT NULL DEFAULT '',
+			invite_token TEXT NOT NULL DEFAULT '',
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email != ''`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_invite_token ON users(invite_token) WHERE invite_token != ''`,
 
 		`CREATE TABLE IF NOT EXISTS auth_accounts (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,6 +144,13 @@ func migrate(conn *sql.DB) error {
 	for _, s := range stmts {
 		if _, err := conn.Exec(s); err != nil {
 			return fmt.Errorf("exec %q: %w", s[:40], err)
+		}
+	}
+	// Add invite_token column to existing databases if missing.
+	if _, err := conn.Exec(`ALTER TABLE users ADD COLUMN invite_token TEXT NOT NULL DEFAULT ''`); err != nil {
+		// Ignore "duplicate column" error.
+		if !strings.Contains(err.Error(), "duplicate column") {
+			// also fine on fresh db where column exists from CREATE TABLE.
 		}
 	}
 	return nil
