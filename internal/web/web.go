@@ -65,6 +65,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/", s.handleIndex)
 	r.Get("/login", s.handleLogin)
 	r.Post("/logout", s.handleLogout)
+	r.Get("/logout", s.handleLogout)
 
 	r.Get("/auth/spotify/start", s.handleSpotifyStart)
 	r.Get("/auth/spotify/callback", s.handleSpotifyCallback)
