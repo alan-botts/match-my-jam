@@ -31,6 +31,15 @@ func Open(path string) (*sql.DB, error) {
 }
 
 func migrate(conn *sql.DB) error {
+	// Run backfill ALTERs first so subsequent CREATE INDEX / table code
+	// can rely on the columns existing, even on databases migrated from
+	// an older schema.
+	if _, err := conn.Exec(`ALTER TABLE users ADD COLUMN invite_token TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") && !strings.Contains(err.Error(), "no such table") {
+			return fmt.Errorf("alter users add invite_token: %w", err)
+		}
+	}
+
 	stmts := []string{
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -144,13 +153,6 @@ func migrate(conn *sql.DB) error {
 	for _, s := range stmts {
 		if _, err := conn.Exec(s); err != nil {
 			return fmt.Errorf("exec %q: %w", s[:40], err)
-		}
-	}
-	// Add invite_token column to existing databases if missing.
-	if _, err := conn.Exec(`ALTER TABLE users ADD COLUMN invite_token TEXT NOT NULL DEFAULT ''`); err != nil {
-		// Ignore "duplicate column" error.
-		if !strings.Contains(err.Error(), "duplicate column") {
-			// also fine on fresh db where column exists from CREATE TABLE.
 		}
 	}
 	return nil
