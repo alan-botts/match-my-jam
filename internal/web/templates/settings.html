@@ -1,6 +1,5 @@
-{{define "settings.html"}}{{template "layout" .}}{{end}}
-{{define "title"}}Settings · Match My Jam{{end}}
-{{define "content"}}
+{{define "settings.html"}}
+{{template "header" .}}
 <section class="dash">
   <header class="dash-head">
     <h1>Settings</h1>
@@ -43,4 +42,5 @@
     </form>
   </section>
 </section>
+{{template "footer" .}}
 {{end}}

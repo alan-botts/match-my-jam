@@ -1,6 +1,5 @@
-{{define "dashboard.html"}}{{template "layout" .}}{{end}}
-{{define "title"}}Dashboard · Match My Jam{{end}}
-{{define "content"}}
+{{define "dashboard.html"}}
+{{template "header" .}}
 <section class="dash">
   <header class="dash-head">
     <h1>Hey, {{.User.DisplayName}} 👋</h1>
@@ -32,7 +31,8 @@
 
   <section class="card">
     <h3>Friends</h3>
-    <p class="muted">Friend requests and overlap view arriving in v2. Sync is the foundation — once you and a friend are both on here, matching is one query away.</p>
+    <p class="muted">Head to the <a href="/friends">Friends</a> page to add people and see overlaps.</p>
   </section>
 </section>
+{{template "footer" .}}
 {{end}}

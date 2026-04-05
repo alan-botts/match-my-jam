@@ -1,6 +1,5 @@
-{{define "friends.html"}}{{template "layout" .}}{{end}}
-{{define "title"}}Friends · Match My Jam{{end}}
-{{define "content"}}
+{{define "friends.html"}}
+{{template "header" .}}
 <section class="dash">
   <header class="dash-head">
     <h1>Friends</h1>
@@ -79,4 +78,5 @@
     {{end}}
   </section>
 </section>
+{{template "footer" .}}
 {{end}}

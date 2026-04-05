@@ -1,9 +1,9 @@
-{{define "layout"}}<!doctype html>
+{{define "header"}}<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{block "title" .}}Match My Jam{{end}}</title>
+<title>{{.Title}}</title>
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
@@ -23,7 +23,9 @@
   </nav>
 </header>
 <main>
-  {{block "content" .}}{{end}}
+{{end}}
+
+{{define "footer"}}
 </main>
 <footer class="site">
   <span>Match My Jam · find the music you share</span>

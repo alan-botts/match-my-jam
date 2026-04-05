@@ -120,10 +120,25 @@ func (s *Server) render(w http.ResponseWriter, name string, data map[string]inte
 	if data == nil {
 		data = map[string]interface{}{}
 	}
+	if _, ok := data["Title"]; !ok {
+		data["Title"] = defaultTitles[name]
+		if data["Title"] == "" {
+			data["Title"] = "Match My Jam"
+		}
+	}
 	if err := s.Templates.ExecuteTemplate(w, name, data); err != nil {
 		log.Printf("render %s: %v", name, err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
+}
+
+var defaultTitles = map[string]string{
+	"landing.html":   "Match My Jam — find the music you share",
+	"login.html":     "Log in · Match My Jam",
+	"dashboard.html": "Dashboard · Match My Jam",
+	"friends.html":   "Friends · Match My Jam",
+	"overlap.html":   "Overlap · Match My Jam",
+	"settings.html":  "Settings · Match My Jam",
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
