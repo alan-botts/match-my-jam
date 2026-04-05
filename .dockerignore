@@ -4,5 +4,4 @@
 *.db-*
 data/
 tmp/
-/match-my-jam
 README.md
