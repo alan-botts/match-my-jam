@@ -1,4 +1,4 @@
-match-my-jam
+/match-my-jam
 *.db
 *.db-*
 .env
