@@ -95,6 +95,12 @@ func (s *Server) Routes() http.Handler {
 		_, _ = w.Write([]byte("ok"))
 	})
 
+	r.Route("/admin", func(r chi.Router) {
+		r.Use(s.adminAuth)
+		r.Get("/users", s.handleAdminListUsers)
+		r.Post("/users/{id}/delete", s.handleAdminDeleteUser)
+	})
+
 	return r
 }
 
