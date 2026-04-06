@@ -176,3 +176,30 @@ a.stat-link:hover .lbl { color: var(--accent-1); }
 .lib-table a { color: var(--fg); }
 .lib-table a:hover { color: var(--accent-1); }
 .dim { color: var(--fg-dim); }
+
+/* Search input above tables */
+.lib-search {
+  display: block; width: 100%; max-width: 480px;
+  background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--fg); padding: 12px 14px; border-radius: var(--radius-sm);
+  font-size: 15px; font-family: inherit; margin-bottom: 14px;
+}
+.lib-search:focus { outline: none; border-color: var(--accent-1); }
+.lib-search::placeholder { color: var(--fg-mute); }
+
+/* Sticky table headers */
+.lib-table thead th { position: sticky; top: 0; background: var(--bg-2); z-index: 2; }
+
+/* Zebra stripes */
+.lib-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+/* Sort arrow styling */
+.sort-arrow { color: var(--fg-mute); font-size: 12px; }
+th[data-dir="asc"] .sort-arrow { color: var(--accent-1); }
+th[data-dir="desc"] .sort-arrow { color: var(--accent-1); }
+
+/* Row count badge */
+.row-count {
+  color: var(--fg-mute); font-size: 13px; margin-bottom: 8px;
+  padding: 0 4px;
+}

@@ -7,14 +7,15 @@
   </header>
 
   {{if .Playlists}}
+  <input class="lib-search" type="text" data-table="playlists-table" placeholder="Search playlists…">
   <div class="card">
-    <table class="lib-table">
+    <table class="lib-table" id="playlists-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Owner</th>
-          <th class="num-col">Tracks</th>
-          <th>Status</th>
+          <th data-sort="text">Name</th>
+          <th data-sort="text">Owner</th>
+          <th data-sort="num" class="num-col">Tracks</th>
+          <th data-sort="text">Status</th>
           <th></th>
         </tr>
       </thead>
@@ -23,7 +24,7 @@
         <tr>
           <td><a href="/library/playlists/{{.ID}}">{{.Name}}</a></td>
           <td class="dim">{{.OwnerName}}</td>
-          <td class="num-col">{{.TrackCount}}</td>
+          <td class="num-col" data-val="{{.TrackCount}}">{{.TrackCount}}</td>
           <td class="dim">{{if .IsPublic}}Public{{else}}Private{{end}}{{if .IsCollaborative}} · Collab{{end}}</td>
           <td><a class="btn ghost small" href="/library/playlists/{{.ID}}">View</a></td>
         </tr>
@@ -37,5 +38,6 @@
   </div>
   {{end}}
 </section>
+<script src="/static/table.js"></script>
 {{template "footer" .}}
 {{end}}

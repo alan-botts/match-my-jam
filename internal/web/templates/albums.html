@@ -7,13 +7,14 @@
   </header>
 
   {{if .Albums}}
+  <input class="lib-search" type="text" data-table="albums-table" placeholder="Search albums, artists…">
   <div class="card">
-    <table class="lib-table">
+    <table class="lib-table" id="albums-table">
       <thead>
         <tr>
-          <th>Album</th>
-          <th>Artist</th>
-          <th>Added</th>
+          <th data-sort="text">Album</th>
+          <th data-sort="text">Artist</th>
+          <th data-sort="date">Added</th>
         </tr>
       </thead>
       <tbody>
@@ -21,7 +22,7 @@
         <tr>
           <td>{{.AlbumName}}</td>
           <td class="dim">{{.ArtistName}}</td>
-          <td class="dim">{{fmtTime .AddedAt}}</td>
+          <td class="dim" data-val="{{if .AddedAt}}{{.AddedAt.Format "2006-01-02T15:04:05Z"}}{{end}}">{{fmtTime .AddedAt}}</td>
         </tr>
         {{end}}
       </tbody>
@@ -33,5 +34,6 @@
   </div>
   {{end}}
 </section>
+<script src="/static/table.js"></script>
 {{template "footer" .}}
 {{end}}
