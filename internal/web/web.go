@@ -312,7 +312,7 @@ func funcs() template.FuncMap {
 			if t == nil {
 				return "—"
 			}
-			return t.Format("Jan 2, 3:04 PM")
+			return t.Format("Jan 2, 2006 3:04 PM")
 		},
 		"fmtDuration": func(ms int) string {
 			totalSec := ms / 1000

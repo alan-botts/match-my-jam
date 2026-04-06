@@ -158,6 +158,7 @@ type Track struct {
 	Type       string   `json:"type"` // "track" or "episode"
 	IsLocal    bool     `json:"is_local"`
 	DurationMs int      `json:"duration_ms"`
+	PreviewURL string   `json:"preview_url"`
 	Artists    []Artist `json:"artists"`
 	Album      struct {
 		Name   string `json:"name"`
@@ -176,6 +177,34 @@ func (t *Track) IsEpisode() bool {
 type Artist struct {
 	Name string `json:"name"`
 	ID   string `json:"id"`
+}
+
+// ArtistFull contains full artist details including genres.
+type ArtistFull struct {
+	ID     string   `json:"id"`
+	Name   string   `json:"name"`
+	Genres []string `json:"genres"`
+}
+
+// Artists fetches full artist details in batches of up to 50.
+func (c *Client) Artists(ctx context.Context, ids []string) ([]ArtistFull, error) {
+	var out []ArtistFull
+	for i := 0; i < len(ids); i += 50 {
+		end := i + 50
+		if end > len(ids) {
+			end = len(ids)
+		}
+		batch := ids[i:end]
+		u := "https://api.spotify.com/v1/artists?ids=" + url.QueryEscape(strings.Join(batch, ","))
+		var resp struct {
+			Artists []ArtistFull `json:"artists"`
+		}
+		if err := c.getJSON(ctx, u, &resp); err != nil {
+			return nil, err
+		}
+		out = append(out, resp.Artists...)
+	}
+	return out, nil
 }
 
 func (t *Track) ArtistNames() string {
