@@ -62,21 +62,31 @@ func (s *SpotifySyncer) doRun(ctx context.Context, userID int64, playlistCount, 
 
 	likedTracks, err := client.LikedTracks(ctx)
 	if err != nil {
-		return fmt.Errorf("fetch liked tracks: %w", err)
+		if isAccessError(err) {
+			log.Printf("liked tracks unavailable (quota): %v", err)
+		} else {
+			return fmt.Errorf("fetch liked tracks: %w", err)
+		}
+	} else {
+		if err := s.replaceLiked(ctx, userID, likedTracks); err != nil {
+			return fmt.Errorf("replace liked: %w", err)
+		}
+		*likedCount = len(likedTracks)
 	}
-	if err := s.replaceLiked(ctx, userID, likedTracks); err != nil {
-		return fmt.Errorf("replace liked: %w", err)
-	}
-	*likedCount = len(likedTracks)
 
 	savedAlbums, err := client.SavedAlbums(ctx)
 	if err != nil {
-		return fmt.Errorf("fetch saved albums: %w", err)
+		if isAccessError(err) {
+			log.Printf("saved albums unavailable (quota): %v", err)
+		} else {
+			return fmt.Errorf("fetch saved albums: %w", err)
+		}
+	} else {
+		if err := s.replaceAlbums(ctx, userID, savedAlbums); err != nil {
+			return fmt.Errorf("replace albums: %w", err)
+		}
+		*albumCount = len(savedAlbums)
 	}
-	if err := s.replaceAlbums(ctx, userID, savedAlbums); err != nil {
-		return fmt.Errorf("replace albums: %w", err)
-	}
-	*albumCount = len(savedAlbums)
 
 	return nil
 }
