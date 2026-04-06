@@ -24,6 +24,8 @@ type PlaylistTrack struct {
 	ArtistName      string
 	AlbumName       string
 	DurationMs      int
+	Genre           string
+	PreviewURL      string
 	AddedAt         *time.Time
 }
 
@@ -34,6 +36,8 @@ type LikedTrack struct {
 	AlbumName       string
 	DurationMs      int
 	AlbumImageURL   string
+	Genre           string
+	PreviewURL      string
 	AddedAt         *time.Time
 }
 
@@ -84,7 +88,7 @@ func (s *Store) PlaylistByID(ctx context.Context, playlistID, userID int64) (*Pl
 
 func (s *Store) PlaylistTracks(ctx context.Context, playlistID int64) ([]PlaylistTrack, error) {
 	rows, err := s.DB.QueryContext(ctx,
-		`SELECT position, provider_track_id, track_name, artist_name, album_name, duration_ms, added_at
+		`SELECT position, provider_track_id, track_name, artist_name, album_name, duration_ms, genre, preview_url, added_at
 		 FROM playlist_tracks WHERE playlist_id = ? ORDER BY position`, playlistID)
 	if err != nil {
 		return nil, err
@@ -94,7 +98,7 @@ func (s *Store) PlaylistTracks(ctx context.Context, playlistID int64) ([]Playlis
 	for rows.Next() {
 		var t PlaylistTrack
 		var addedAt sql.NullTime
-		if err := rows.Scan(&t.Position, &t.ProviderTrackID, &t.TrackName, &t.ArtistName, &t.AlbumName, &t.DurationMs, &addedAt); err != nil {
+		if err := rows.Scan(&t.Position, &t.ProviderTrackID, &t.TrackName, &t.ArtistName, &t.AlbumName, &t.DurationMs, &t.Genre, &t.PreviewURL, &addedAt); err != nil {
 			return nil, err
 		}
 		if addedAt.Valid {
@@ -108,7 +112,7 @@ func (s *Store) PlaylistTracks(ctx context.Context, playlistID int64) ([]Playlis
 
 func (s *Store) UserLikedTracks(ctx context.Context, userID int64) ([]LikedTrack, error) {
 	rows, err := s.DB.QueryContext(ctx,
-		`SELECT provider_track_id, track_name, artist_name, album_name, duration_ms, album_image_url, added_at
+		`SELECT provider_track_id, track_name, artist_name, album_name, duration_ms, album_image_url, genre, preview_url, added_at
 		 FROM liked_tracks WHERE user_id = ? ORDER BY added_at DESC`, userID)
 	if err != nil {
 		return nil, err
@@ -118,7 +122,7 @@ func (s *Store) UserLikedTracks(ctx context.Context, userID int64) ([]LikedTrack
 	for rows.Next() {
 		var t LikedTrack
 		var addedAt sql.NullTime
-		if err := rows.Scan(&t.ProviderTrackID, &t.TrackName, &t.ArtistName, &t.AlbumName, &t.DurationMs, &t.AlbumImageURL, &addedAt); err != nil {
+		if err := rows.Scan(&t.ProviderTrackID, &t.TrackName, &t.ArtistName, &t.AlbumName, &t.DurationMs, &t.AlbumImageURL, &t.Genre, &t.PreviewURL, &addedAt); err != nil {
 			return nil, err
 		}
 		if addedAt.Valid {

@@ -19,9 +19,11 @@
       <thead>
         <tr>
           <th class="art-col"></th>
+          <th class="preview-col"></th>
           <th data-sort="text">Track</th>
           <th data-sort="text">Artist</th>
           <th data-sort="text">Album</th>
+          <th data-sort="text">Genre</th>
           <th data-sort="num" class="num-col">Duration</th>
           <th data-sort="date">Added</th>
         </tr>
@@ -30,9 +32,11 @@
         {{range .Tracks}}
         <tr>
           <td class="art-col">{{if .AlbumImageURL}}<img src="{{.AlbumImageURL}}" width="40" height="40" loading="lazy" alt="">{{else}}<div class="art-placeholder"></div>{{end}}</td>
+          <td class="preview-col">{{if .PreviewURL}}<button class="preview-btn" data-preview="{{.PreviewURL}}" title="Play 30s preview" aria-label="Play preview">&#9654;</button>{{end}}</td>
           <td>{{if .ProviderTrackID}}<a href="https://open.spotify.com/track/{{.ProviderTrackID}}" target="_blank" rel="noopener">{{.TrackName}} <span class="ext-icon">&#8599;</span></a>{{else}}{{.TrackName}}{{end}}</td>
           <td class="dim">{{.ArtistName}}</td>
           <td class="dim">{{.AlbumName}}</td>
+          <td>{{range splitGenres .Genre}}<span class="genre-pill" data-genre="{{.}}">{{.}}</span>{{end}}</td>
           <td class="num-col" data-val="{{.DurationMs}}">{{fmtDuration .DurationMs}}</td>
           <td class="dim" data-val="{{if .AddedAt}}{{.AddedAt.Format "2006-01-02T15:04:05Z"}}{{end}}">{{fmtTime .AddedAt}}</td>
         </tr>
@@ -47,5 +51,7 @@
   {{end}}
 </section>
 <script src="/static/table.js"></script>
+<script src="/static/preview.js"></script>
+<script src="/static/genre.js"></script>
 {{template "footer" .}}
 {{end}}

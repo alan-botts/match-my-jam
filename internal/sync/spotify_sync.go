@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/alan-botts/match-my-jam/internal/spotify"
@@ -16,6 +17,11 @@ import (
 type SpotifySyncer struct {
 	Store     *store.Store
 	OAuthConf *oauth2.Config
+
+	// playlistTrackArtists maps provider_track_id -> first artist ID
+	// so we can backfill genres after fetching artist details.
+	mu                   sync.Mutex
+	playlistTrackArtists map[string]string
 }
 
 func (s *SpotifySyncer) Run(ctx context.Context, userID int64) error {
@@ -51,16 +57,21 @@ func (s *SpotifySyncer) doRun(ctx context.Context, userID int64, playlistCount, 
 	httpClient := oauth2.NewClient(ctx, ts)
 	client := spotify.NewClientFromHTTP(httpClient)
 
+	// Collect all unique artist IDs across liked tracks and playlist tracks
+	// so we can batch-fetch genres afterwards.
+	artistIDSet := make(map[string]bool)
+
 	pls, err := client.AllPlaylists(ctx)
 	if err != nil {
 		return fmt.Errorf("fetch playlists: %w", err)
 	}
-	if err := s.upsertPlaylists(ctx, userID, pls, client); err != nil {
+	if err := s.upsertPlaylists(ctx, userID, pls, client, artistIDSet); err != nil {
 		return fmt.Errorf("upsert playlists: %w", err)
 	}
 	*playlistCount = len(pls)
 
-	likedTracks, err := client.LikedTracks(ctx)
+	var likedTracks []spotify.SavedTrack
+	likedTracks, err = client.LikedTracks(ctx)
 	if err != nil {
 		if isAccessError(err) {
 			log.Printf("liked tracks unavailable (quota): %v", err)
@@ -68,8 +79,12 @@ func (s *SpotifySyncer) doRun(ctx context.Context, userID int64, playlistCount, 
 			return fmt.Errorf("fetch liked tracks: %w", err)
 		}
 	} else {
-		if err := s.replaceLiked(ctx, userID, likedTracks); err != nil {
-			return fmt.Errorf("replace liked: %w", err)
+		for _, it := range likedTracks {
+			for _, a := range it.Track.Artists {
+				if a.ID != "" {
+					artistIDSet[a.ID] = true
+				}
+			}
 		}
 		*likedCount = len(likedTracks)
 	}
@@ -88,10 +103,90 @@ func (s *SpotifySyncer) doRun(ctx context.Context, userID int64, playlistCount, 
 		*albumCount = len(savedAlbums)
 	}
 
+	// Batch-fetch artist genres and store in artists table.
+	artistGenres := s.fetchAndStoreArtists(ctx, client, artistIDSet)
+
+	// Now store liked tracks (needs genre map).
+	if likedTracks != nil {
+		if err := s.replaceLiked(ctx, userID, likedTracks, artistGenres); err != nil {
+			return fmt.Errorf("replace liked: %w", err)
+		}
+	}
+
+	// Backfill genres on playlist tracks that were already inserted.
+	s.backfillPlaylistGenres(ctx, artistGenres)
+
 	return nil
 }
 
-func (s *SpotifySyncer) upsertPlaylists(ctx context.Context, userID int64, pls []spotify.PlaylistSummary, client *spotify.Client) error {
+// fetchAndStoreArtists fetches full artist details in batches and upserts them
+// into the artists table. Returns a map of artist ID -> comma-separated genres.
+func (s *SpotifySyncer) fetchAndStoreArtists(ctx context.Context, client *spotify.Client, idSet map[string]bool) map[string]string {
+	genres := make(map[string]string)
+	if len(idSet) == 0 {
+		return genres
+	}
+	ids := make([]string, 0, len(idSet))
+	for id := range idSet {
+		ids = append(ids, id)
+	}
+	artists, err := client.Artists(ctx, ids)
+	if err != nil {
+		if isAccessError(err) {
+			log.Printf("artist genres unavailable (quota): %v", err)
+		} else {
+			log.Printf("fetch artists for genres: %v", err)
+		}
+		return genres
+	}
+	for _, a := range artists {
+		g := ""
+		if len(a.Genres) > 0 {
+			limit := len(a.Genres)
+			if limit > 3 {
+				limit = 3
+			}
+			g = strings.Join(a.Genres[:limit], ", ")
+		}
+		genres[a.ID] = g
+		// Upsert into artists table.
+		_, _ = s.Store.DB.ExecContext(ctx,
+			`INSERT INTO artists (provider, provider_artist_id, name, genres)
+			 VALUES (?, ?, ?, ?)
+			 ON CONFLICT(provider, provider_artist_id) DO UPDATE SET name=excluded.name, genres=excluded.genres`,
+			spotify.Provider, a.ID, a.Name, g,
+		)
+	}
+	return genres
+}
+
+// backfillPlaylistGenres updates genre on playlist_tracks rows that were
+// inserted before artist genres were available. Uses the track-to-artist
+// mapping collected during replacePlaylistTracks.
+func (s *SpotifySyncer) backfillPlaylistGenres(ctx context.Context, artistGenres map[string]string) {
+	if len(artistGenres) == 0 {
+		return
+	}
+	s.mu.Lock()
+	trackArtists := s.playlistTrackArtists
+	s.playlistTrackArtists = nil
+	s.mu.Unlock()
+	if trackArtists == nil {
+		return
+	}
+	for trackID, artistID := range trackArtists {
+		g := artistGenres[artistID]
+		if g == "" {
+			continue
+		}
+		_, _ = s.Store.DB.ExecContext(ctx,
+			`UPDATE playlist_tracks SET genre = ? WHERE provider_track_id = ? AND genre = ''`,
+			g, trackID,
+		)
+	}
+}
+
+func (s *SpotifySyncer) upsertPlaylists(ctx context.Context, userID int64, pls []spotify.PlaylistSummary, client *spotify.Client, artistIDSet map[string]bool) error {
 	for _, p := range pls {
 		imageURL := ""
 		if len(p.Images) > 0 {
@@ -127,7 +222,7 @@ func (s *SpotifySyncer) upsertPlaylists(ctx context.Context, userID int64, pls [
 			}
 			return fmt.Errorf("playlist %s tracks: %w", p.Name, err)
 		}
-		if err := s.replacePlaylistTracks(ctx, playlistID, tracks); err != nil {
+		if err := s.replacePlaylistTracks(ctx, playlistID, tracks, artistIDSet); err != nil {
 			return err
 		}
 	}
@@ -142,7 +237,7 @@ func isAccessError(err error) bool {
 	return strings.Contains(msg, "403") || strings.Contains(msg, "404")
 }
 
-func (s *SpotifySyncer) replacePlaylistTracks(ctx context.Context, playlistID int64, tracks []spotify.PlaylistTrack) error {
+func (s *SpotifySyncer) replacePlaylistTracks(ctx context.Context, playlistID int64, tracks []spotify.PlaylistTrack, artistIDSet map[string]bool) error {
 	tx, err := s.Store.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -152,39 +247,48 @@ func (s *SpotifySyncer) replacePlaylistTracks(ctx context.Context, playlistID in
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx,
-		`INSERT INTO playlist_tracks (playlist_id, position, provider_track_id, track_name, artist_name, album_name, duration_ms, added_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO playlist_tracks (playlist_id, position, provider_track_id, track_name, artist_name, album_name, duration_ms, preview_url, added_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
+
+	s.mu.Lock()
+	if s.playlistTrackArtists == nil {
+		s.playlistTrackArtists = make(map[string]string)
+	}
+	s.mu.Unlock()
+
 	for i, t := range tracks {
 		if t.Track == nil {
-			// Null item — track was removed or is unavailable.
 			continue
 		}
 		if t.Track.IsEpisode() {
-			// Podcast episodes are not music tracks; skip them.
 			continue
 		}
-		// Local files have no Spotify ID but may have name/artist/album.
-		// We store them with an empty provider_track_id so they still
-		// appear in the playlist view. The is_local flag on the outer
-		// PlaylistTrack or the inner Track can both indicate this.
 		trackID := t.Track.ID
 		if trackID == "" && !t.IsLocal && !t.Track.IsLocal {
-			// No ID and not a local file — skip unknown item.
 			continue
 		}
-		if _, err := stmt.ExecContext(ctx, playlistID, i, trackID, t.Track.Name, t.Track.ArtistNames(), t.Track.Album.Name, t.Track.DurationMs, nullTime(parseTime(t.AddedAt))); err != nil {
+		// Collect artist IDs for genre fetching.
+		if len(t.Track.Artists) > 0 && t.Track.Artists[0].ID != "" {
+			artistIDSet[t.Track.Artists[0].ID] = true
+			if trackID != "" {
+				s.mu.Lock()
+				s.playlistTrackArtists[trackID] = t.Track.Artists[0].ID
+				s.mu.Unlock()
+			}
+		}
+		if _, err := stmt.ExecContext(ctx, playlistID, i, trackID, t.Track.Name, t.Track.ArtistNames(), t.Track.Album.Name, t.Track.DurationMs, t.Track.PreviewURL, nullTime(parseTime(t.AddedAt))); err != nil {
 			return err
 		}
 	}
 	return tx.Commit()
 }
 
-func (s *SpotifySyncer) replaceLiked(ctx context.Context, userID int64, items []spotify.SavedTrack) error {
+func (s *SpotifySyncer) replaceLiked(ctx context.Context, userID int64, items []spotify.SavedTrack, artistGenres map[string]string) error {
 	tx, err := s.Store.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -194,8 +298,8 @@ func (s *SpotifySyncer) replaceLiked(ctx context.Context, userID int64, items []
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx,
-		`INSERT OR IGNORE INTO liked_tracks (user_id, provider, provider_track_id, track_name, artist_name, album_name, duration_ms, album_image_url, added_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT OR IGNORE INTO liked_tracks (user_id, provider, provider_track_id, track_name, artist_name, album_name, duration_ms, album_image_url, genre, preview_url, added_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	)
 	if err != nil {
 		return err
@@ -209,7 +313,11 @@ func (s *SpotifySyncer) replaceLiked(ctx context.Context, userID int64, items []
 		if len(it.Track.Album.Images) > 0 {
 			albumImg = it.Track.Album.Images[len(it.Track.Album.Images)-1].URL
 		}
-		if _, err := stmt.ExecContext(ctx, userID, spotify.Provider, it.Track.ID, it.Track.Name, it.Track.ArtistNames(), it.Track.Album.Name, it.Track.DurationMs, albumImg, nullTime(parseTime(it.AddedAt))); err != nil {
+		genre := ""
+		if len(it.Track.Artists) > 0 && it.Track.Artists[0].ID != "" {
+			genre = artistGenres[it.Track.Artists[0].ID]
+		}
+		if _, err := stmt.ExecContext(ctx, userID, spotify.Provider, it.Track.ID, it.Track.Name, it.Track.ArtistNames(), it.Track.Album.Name, it.Track.DurationMs, albumImg, genre, it.Track.PreviewURL, nullTime(parseTime(it.AddedAt))); err != nil {
 			return err
 		}
 	}

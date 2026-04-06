@@ -139,7 +139,7 @@ func (s *Server) handleExportLiked(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/csv")
 	w.Header().Set("Content-Disposition", `attachment; filename="liked_tracks.csv"`)
 	cw := csv.NewWriter(w)
-	_ = cw.Write([]string{"Track", "Artist", "Album", "Duration", "Added", "Spotify URL"})
+	_ = cw.Write([]string{"Track", "Artist", "Album", "Genre", "Duration", "Added", "Spotify URL"})
 	for _, t := range tracks {
 		added := ""
 		if t.AddedAt != nil {
@@ -150,7 +150,7 @@ func (s *Server) handleExportLiked(w http.ResponseWriter, r *http.Request) {
 		if t.ProviderTrackID != "" {
 			url = "https://open.spotify.com/track/" + t.ProviderTrackID
 		}
-		_ = cw.Write([]string{t.TrackName, t.ArtistName, t.AlbumName, dur, added, url})
+		_ = cw.Write([]string{t.TrackName, t.ArtistName, t.AlbumName, t.Genre, dur, added, url})
 	}
 	cw.Flush()
 }

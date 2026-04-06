@@ -54,6 +54,27 @@ func migrate(conn *sql.DB) error {
 			return fmt.Errorf("alter saved_albums add image_url: %w", err)
 		}
 	}
+	// Pass 3: genre and preview_url columns
+	if _, err := conn.Exec(`ALTER TABLE liked_tracks ADD COLUMN genre TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") && !strings.Contains(err.Error(), "no such table") {
+			return fmt.Errorf("alter liked_tracks add genre: %w", err)
+		}
+	}
+	if _, err := conn.Exec(`ALTER TABLE liked_tracks ADD COLUMN preview_url TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") && !strings.Contains(err.Error(), "no such table") {
+			return fmt.Errorf("alter liked_tracks add preview_url: %w", err)
+		}
+	}
+	if _, err := conn.Exec(`ALTER TABLE playlist_tracks ADD COLUMN genre TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") && !strings.Contains(err.Error(), "no such table") {
+			return fmt.Errorf("alter playlist_tracks add genre: %w", err)
+		}
+	}
+	if _, err := conn.Exec(`ALTER TABLE playlist_tracks ADD COLUMN preview_url TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") && !strings.Contains(err.Error(), "no such table") {
+			return fmt.Errorf("alter playlist_tracks add preview_url: %w", err)
+		}
+	}
 
 	stmts := []string{
 		`CREATE TABLE IF NOT EXISTS users (
@@ -101,6 +122,15 @@ func migrate(conn *sql.DB) error {
 			UNIQUE(user_id, provider, provider_playlist_id)
 		)`,
 
+		`CREATE TABLE IF NOT EXISTS artists (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			provider TEXT NOT NULL,
+			provider_artist_id TEXT NOT NULL,
+			name TEXT NOT NULL DEFAULT '',
+			genres TEXT NOT NULL DEFAULT '',
+			UNIQUE(provider, provider_artist_id)
+		)`,
+
 		`CREATE TABLE IF NOT EXISTS playlist_tracks (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			playlist_id INTEGER NOT NULL REFERENCES playlists(id) ON DELETE CASCADE,
@@ -110,6 +140,8 @@ func migrate(conn *sql.DB) error {
 			artist_name TEXT NOT NULL DEFAULT '',
 			album_name TEXT NOT NULL DEFAULT '',
 			duration_ms INTEGER NOT NULL DEFAULT 0,
+			genre TEXT NOT NULL DEFAULT '',
+			preview_url TEXT NOT NULL DEFAULT '',
 			added_at TIMESTAMP,
 			UNIQUE(playlist_id, position)
 		)`,
@@ -125,6 +157,8 @@ func migrate(conn *sql.DB) error {
 			album_name TEXT NOT NULL DEFAULT '',
 			duration_ms INTEGER NOT NULL DEFAULT 0,
 			album_image_url TEXT NOT NULL DEFAULT '',
+			genre TEXT NOT NULL DEFAULT '',
+			preview_url TEXT NOT NULL DEFAULT '',
 			added_at TIMESTAMP,
 			UNIQUE(user_id, provider, provider_track_id)
 		)`,

@@ -215,3 +215,33 @@ th[data-dir="desc"] .sort-arrow { color: var(--accent-1); }
 /* Library meta row (search + duration total) */
 .lib-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
 .lib-meta .lib-search { margin-bottom: 0; flex: 1; }
+
+/* Genre pill badges */
+.genre-pill {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--fg-dim);
+  margin: 1px 3px 1px 0;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* Audio preview button */
+.preview-col { width: 32px; padding: 6px 4px !important; }
+.preview-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 1px solid var(--accent-1);
+  background: transparent;
+  color: var(--accent-1);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: background .15s ease, transform .08s ease;
+}
+.preview-btn:hover { background: rgba(255,61,110,0.15); transform: scale(1.1); }
+.preview-btn.playing { background: rgba(255,61,110,0.2); }

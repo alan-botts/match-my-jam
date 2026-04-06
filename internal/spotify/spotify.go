@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -227,7 +228,7 @@ func (c *Client) PlaylistTracks(ctx context.Context, playlistID string) ([]Playl
 	next := fmt.Sprintf(
 		"https://api.spotify.com/v1/playlists/%s/items?limit=100&fields=%s",
 		url.PathEscape(playlistID),
-		url.QueryEscape("next,items(added_at,is_local,item(id,name,type,is_local,duration_ms,artists(id,name),album(id,name,images)),track(id,name,type,is_local,duration_ms,artists(id,name),album(id,name,images)))"),
+		url.QueryEscape("next,items(added_at,is_local,item(id,name,type,is_local,duration_ms,preview_url,artists(id,name),album(id,name,images)),track(id,name,type,is_local,duration_ms,preview_url,artists(id,name),album(id,name,images)))"),
 	)
 	for next != "" {
 		var page Paging

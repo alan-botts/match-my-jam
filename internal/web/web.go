@@ -320,5 +320,19 @@ func funcs() template.FuncMap {
 			sec := totalSec % 60
 			return fmt.Sprintf("%d:%02d", m, sec)
 		},
+		"splitGenres": func(g string) []string {
+			if g == "" {
+				return nil
+			}
+			parts := strings.Split(g, ", ")
+			var out []string
+			for _, p := range parts {
+				p = strings.TrimSpace(p)
+				if p != "" {
+					out = append(out, p)
+				}
+			}
+			return out
+		},
 	}
 }
