@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/alan-botts/match-my-jam/internal/config"
 	"github.com/alan-botts/match-my-jam/internal/db"
+	"github.com/alan-botts/match-my-jam/internal/spotify"
 	"github.com/alan-botts/match-my-jam/internal/store"
+	mmjsync "github.com/alan-botts/match-my-jam/internal/sync"
 	"github.com/alan-botts/match-my-jam/internal/web"
 )
 
@@ -30,6 +33,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("web: %v", err)
 	}
+
+	// Start sync watchdog in background.
+	sp := spotify.OAuthConfig(cfg.SpotifyClientID, cfg.SpotifyClientSecret, cfg.BaseURL+"/auth/spotify/callback")
+	wd := &mmjsync.Watchdog{Store: s, OAuthConf: sp}
+	go wd.Run(context.Background())
 
 	addr := ":" + cfg.Port
 	log.Printf("Match My Jam listening on %s (base=%s, db=%s)", addr, cfg.BaseURL, cfg.DBPath)
