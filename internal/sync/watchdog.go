@@ -72,14 +72,21 @@ func (w *Watchdog) checkAndRecover(ctx context.Context) {
 		stale = append(stale, s)
 	}
 
+	// Deduplicate by user+provider — only re-kick once per user.
+	kicked := map[int64]bool{}
 	for _, s := range stale {
 		age := time.Since(s.StartedAt).Round(time.Second)
-		log.Printf("watchdog: found stale sync run=%d user=%d provider=%s age=%s — marking failed and re-kicking", s.ID, s.UserID, s.Provider, age)
+		log.Printf("watchdog: marking stale sync run=%d user=%d provider=%s age=%s as aborted", s.ID, s.UserID, s.Provider, age)
 
-		// Mark the stale run as failed.
+		// Mark the stale run as aborted.
 		_, _ = w.Store.DB.ExecContext(ctx,
 			`UPDATE sync_runs SET status = 'aborted', finished_at = CURRENT_TIMESTAMP, error = 'aborted by watchdog (stale)' WHERE id = ?`, s.ID,
 		)
+
+		if kicked[s.UserID] {
+			continue
+		}
+		kicked[s.UserID] = true
 
 		// Verify the user still exists and has an auth account for this provider.
 		_, err := w.Store.GetAuthAccount(ctx, s.UserID, s.Provider)
