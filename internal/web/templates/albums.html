@@ -3,7 +3,10 @@
 <section class="dash">
   <header class="dash-head">
     <h1>Saved Albums</h1>
-    <a class="btn ghost small" href="/dashboard">&larr; Dashboard</a>
+    <div>
+      <a class="btn ghost small" href="/library/albums/export">Export CSV</a>
+      <a class="btn ghost small" href="/dashboard">&larr; Dashboard</a>
+    </div>
   </header>
 
   {{if .Albums}}
@@ -12,6 +15,7 @@
     <table class="lib-table" id="albums-table">
       <thead>
         <tr>
+          <th class="art-col"></th>
           <th data-sort="text">Album</th>
           <th data-sort="text">Artist</th>
           <th data-sort="date">Added</th>
@@ -20,7 +24,8 @@
       <tbody>
         {{range .Albums}}
         <tr>
-          <td>{{.AlbumName}}</td>
+          <td class="art-col">{{if .ImageURL}}<img src="{{.ImageURL}}" width="40" height="40" loading="lazy" alt="">{{else}}<div class="art-placeholder"></div>{{end}}</td>
+          <td>{{if .ProviderAlbumID}}<a href="https://open.spotify.com/album/{{.ProviderAlbumID}}" target="_blank" rel="noopener">{{.AlbumName}} <span class="ext-icon">&#8599;</span></a>{{else}}{{.AlbumName}}{{end}}</td>
           <td class="dim">{{.ArtistName}}</td>
           <td class="dim" data-val="{{if .AddedAt}}{{.AddedAt.Format "2006-01-02T15:04:05Z"}}{{end}}">{{fmtTime .AddedAt}}</td>
         </tr>

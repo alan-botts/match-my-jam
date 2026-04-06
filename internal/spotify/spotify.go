@@ -87,6 +87,9 @@ type PlaylistSummary struct {
 	Tracks struct {
 		Total int `json:"total"`
 	} `json:"tracks"`
+	Images []struct {
+		URL string `json:"url"`
+	} `json:"images"`
 }
 
 func (c *Client) AllPlaylists(ctx context.Context) ([]PlaylistSummary, error) {
@@ -152,13 +155,16 @@ func (pt *PlaylistTrack) UnmarshalJSON(data []byte) error {
 type Track struct {
 	ID         string   `json:"id"`
 	Name       string   `json:"name"`
-	Type       string   `json:"type"`       // "track" or "episode"
+	Type       string   `json:"type"` // "track" or "episode"
 	IsLocal    bool     `json:"is_local"`
 	DurationMs int      `json:"duration_ms"`
 	Artists    []Artist `json:"artists"`
 	Album      struct {
-		Name string `json:"name"`
-		ID   string `json:"id"`
+		Name   string `json:"name"`
+		ID     string `json:"id"`
+		Images []struct {
+			URL string `json:"url"`
+		} `json:"images"`
 	} `json:"album"`
 }
 
@@ -192,7 +198,7 @@ func (c *Client) PlaylistTracks(ctx context.Context, playlistID string) ([]Playl
 	next := fmt.Sprintf(
 		"https://api.spotify.com/v1/playlists/%s/items?limit=100&fields=%s",
 		url.PathEscape(playlistID),
-		url.QueryEscape("next,items(added_at,is_local,item(id,name,type,is_local,duration_ms,artists(id,name),album(id,name)),track(id,name,type,is_local,duration_ms,artists(id,name),album(id,name)))"),
+		url.QueryEscape("next,items(added_at,is_local,item(id,name,type,is_local,duration_ms,artists(id,name),album(id,name,images)),track(id,name,type,is_local,duration_ms,artists(id,name),album(id,name,images)))"),
 	)
 	for next != "" {
 		var page Paging
@@ -238,6 +244,9 @@ type SavedAlbum struct {
 		ID      string   `json:"id"`
 		Name    string   `json:"name"`
 		Artists []Artist `json:"artists"`
+		Images  []struct {
+			URL string `json:"url"`
+		} `json:"images"`
 	} `json:"album"`
 }
 

@@ -2,7 +2,7 @@
 {{template "header" .}}
 <section class="dash">
   <header class="dash-head">
-    <h1>{{.Playlist.Name}}</h1>
+    <h1>{{if .Playlist.ImageURL}}<img src="{{.Playlist.ImageURL}}" width="40" height="40" style="vertical-align:middle;border-radius:4px;margin-right:8px" alt="">{{end}}{{.Playlist.Name}}</h1>
     <a class="btn ghost small" href="/library/playlists">&larr; All Playlists</a>
   </header>
 
@@ -11,11 +11,15 @@
       <span class="dim">Owner:</span> {{.Playlist.OwnerName}} &middot;
       <span class="dim">Tracks:</span> {{.Playlist.TrackCount}} &middot;
       {{if .Playlist.IsPublic}}Public{{else}}Private{{end}}{{if .Playlist.IsCollaborative}} · Collaborative{{end}}
+      {{if .Playlist.ProviderPlaylistID}}&middot; <a href="https://open.spotify.com/playlist/{{.Playlist.ProviderPlaylistID}}" target="_blank" rel="noopener">Open in Spotify <span class="ext-icon">&#8599;</span></a>{{end}}
     </p>
   </div>
 
   {{if .Tracks}}
-  <input class="lib-search" type="text" data-table="detail-table" placeholder="Search tracks…">
+  <div class="lib-meta">
+    <input class="lib-search" type="text" data-table="detail-table" placeholder="Search tracks…">
+    <span class="dim">Total: {{.TotalDuration}}</span>
+  </div>
   <div class="card">
     <table class="lib-table" id="detail-table">
       <thead>
@@ -31,7 +35,7 @@
         {{range .Tracks}}
         <tr>
           <td class="num-col dim" data-val="{{.Position}}">{{.Position}}</td>
-          <td>{{.TrackName}}</td>
+          <td>{{if .ProviderTrackID}}<a href="https://open.spotify.com/track/{{.ProviderTrackID}}" target="_blank" rel="noopener">{{.TrackName}} <span class="ext-icon">&#8599;</span></a>{{else}}{{.TrackName}}{{end}}</td>
           <td class="dim">{{.ArtistName}}</td>
           <td class="dim">{{.AlbumName}}</td>
           <td class="num-col" data-val="{{.DurationMs}}">{{fmtDuration .DurationMs}}</td>

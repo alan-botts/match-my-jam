@@ -1,12 +1,24 @@
 package web
 
 import (
+	"encoding/csv"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
+
+func formatTotalDuration(totalMs int) string {
+	totalSec := totalMs / 1000
+	h := totalSec / 3600
+	m := (totalSec % 3600) / 60
+	if h > 0 {
+		return fmt.Sprintf("%dh %dm", h, m)
+	}
+	return fmt.Sprintf("%dm", m)
+}
 
 func (s *Server) handlePlaylists(w http.ResponseWriter, r *http.Request) {
 	uid := currentUserID(r)
@@ -42,10 +54,15 @@ func (s *Server) handlePlaylistDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
 	}
+	var totalMs int
+	for _, t := range tracks {
+		totalMs += t.DurationMs
+	}
 	s.render(w, "playlist_detail.html", map[string]interface{}{
-		"User":     user,
-		"Playlist": playlist,
-		"Tracks":   tracks,
+		"User":          user,
+		"Playlist":      playlist,
+		"Tracks":        tracks,
+		"TotalDuration": formatTotalDuration(totalMs),
 	})
 }
 
@@ -58,9 +75,14 @@ func (s *Server) handleLiked(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "db error", http.StatusInternalServerError)
 		return
 	}
+	var totalMs int
+	for _, t := range tracks {
+		totalMs += t.DurationMs
+	}
 	s.render(w, "liked.html", map[string]interface{}{
-		"User":   user,
-		"Tracks": tracks,
+		"User":          user,
+		"Tracks":        tracks,
+		"TotalDuration": formatTotalDuration(totalMs),
 	})
 }
 
@@ -77,4 +99,83 @@ func (s *Server) handleAlbums(w http.ResponseWriter, r *http.Request) {
 		"User":   user,
 		"Albums": albums,
 	})
+}
+
+func (s *Server) handleExportPlaylists(w http.ResponseWriter, r *http.Request) {
+	uid := currentUserID(r)
+	playlists, err := s.Store.UserPlaylists(r.Context(), uid)
+	if err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", `attachment; filename="playlists.csv"`)
+	cw := csv.NewWriter(w)
+	_ = cw.Write([]string{"Name", "Owner", "Tracks", "Public", "Collaborative", "Spotify URL"})
+	for _, p := range playlists {
+		pub := "No"
+		if p.IsPublic {
+			pub = "Yes"
+		}
+		collab := "No"
+		if p.IsCollaborative {
+			collab = "Yes"
+		}
+		_ = cw.Write([]string{
+			p.Name, p.OwnerName, strconv.Itoa(p.TrackCount), pub, collab,
+			"https://open.spotify.com/playlist/" + p.ProviderPlaylistID,
+		})
+	}
+	cw.Flush()
+}
+
+func (s *Server) handleExportLiked(w http.ResponseWriter, r *http.Request) {
+	uid := currentUserID(r)
+	tracks, err := s.Store.UserLikedTracks(r.Context(), uid)
+	if err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", `attachment; filename="liked_tracks.csv"`)
+	cw := csv.NewWriter(w)
+	_ = cw.Write([]string{"Track", "Artist", "Album", "Duration", "Added", "Spotify URL"})
+	for _, t := range tracks {
+		added := ""
+		if t.AddedAt != nil {
+			added = t.AddedAt.Format("2006-01-02")
+		}
+		dur := fmt.Sprintf("%d:%02d", t.DurationMs/1000/60, t.DurationMs/1000%60)
+		url := ""
+		if t.ProviderTrackID != "" {
+			url = "https://open.spotify.com/track/" + t.ProviderTrackID
+		}
+		_ = cw.Write([]string{t.TrackName, t.ArtistName, t.AlbumName, dur, added, url})
+	}
+	cw.Flush()
+}
+
+func (s *Server) handleExportAlbums(w http.ResponseWriter, r *http.Request) {
+	uid := currentUserID(r)
+	albums, err := s.Store.UserSavedAlbums(r.Context(), uid)
+	if err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", `attachment; filename="saved_albums.csv"`)
+	cw := csv.NewWriter(w)
+	_ = cw.Write([]string{"Album", "Artist", "Added", "Spotify URL"})
+	for _, a := range albums {
+		added := ""
+		if a.AddedAt != nil {
+			added = a.AddedAt.Format("2006-01-02")
+		}
+		url := ""
+		if a.ProviderAlbumID != "" {
+			url = "https://open.spotify.com/album/" + a.ProviderAlbumID
+		}
+		_ = cw.Write([]string{a.AlbumName, a.ArtistName, added, url})
+	}
+	cw.Flush()
 }

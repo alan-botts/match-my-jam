@@ -87,9 +87,12 @@ func (s *Server) Routes() http.Handler {
 		r.Get("/friends/{id}/overlap", s.handleOverlap)
 
 		r.Get("/library/playlists", s.handlePlaylists)
+		r.Get("/library/playlists/export", s.handleExportPlaylists)
 		r.Get("/library/playlists/{id}", s.handlePlaylistDetail)
 		r.Get("/library/liked", s.handleLiked)
+		r.Get("/library/liked/export", s.handleExportLiked)
 		r.Get("/library/albums", s.handleAlbums)
+		r.Get("/library/albums/export", s.handleExportAlbums)
 
 		r.Get("/settings", s.handleSettings)
 		r.Post("/settings/disconnect/{id}", s.handleDisconnect)

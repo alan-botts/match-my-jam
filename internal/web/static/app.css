@@ -203,3 +203,15 @@ th[data-dir="desc"] .sort-arrow { color: var(--accent-1); }
   color: var(--fg-mute); font-size: 13px; margin-bottom: 8px;
   padding: 0 4px;
 }
+
+/* Album art thumbnails */
+.art-col { width: 40px; padding: 6px 8px !important; }
+.art-col img { display: block; border-radius: 4px; object-fit: cover; }
+.art-placeholder { width: 40px; height: 40px; border-radius: 4px; background: var(--bg-3); }
+
+/* External link indicator */
+.ext-icon { font-size: 11px; color: var(--fg-mute); vertical-align: super; margin-left: 2px; }
+
+/* Library meta row (search + duration total) */
+.lib-meta { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.lib-meta .lib-search { margin-bottom: 0; flex: 1; }

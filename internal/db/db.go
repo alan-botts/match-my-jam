@@ -39,6 +39,21 @@ func migrate(conn *sql.DB) error {
 			return fmt.Errorf("alter users add invite_token: %w", err)
 		}
 	}
+	if _, err := conn.Exec(`ALTER TABLE playlists ADD COLUMN image_url TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") && !strings.Contains(err.Error(), "no such table") {
+			return fmt.Errorf("alter playlists add image_url: %w", err)
+		}
+	}
+	if _, err := conn.Exec(`ALTER TABLE liked_tracks ADD COLUMN album_image_url TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") && !strings.Contains(err.Error(), "no such table") {
+			return fmt.Errorf("alter liked_tracks add album_image_url: %w", err)
+		}
+	}
+	if _, err := conn.Exec(`ALTER TABLE saved_albums ADD COLUMN image_url TEXT NOT NULL DEFAULT ''`); err != nil {
+		if !strings.Contains(err.Error(), "duplicate column") && !strings.Contains(err.Error(), "no such table") {
+			return fmt.Errorf("alter saved_albums add image_url: %w", err)
+		}
+	}
 
 	stmts := []string{
 		`CREATE TABLE IF NOT EXISTS users (
@@ -81,6 +96,7 @@ func migrate(conn *sql.DB) error {
 			is_public INTEGER NOT NULL DEFAULT 0,
 			is_collaborative INTEGER NOT NULL DEFAULT 0,
 			snapshot_id TEXT NOT NULL DEFAULT '',
+			image_url TEXT NOT NULL DEFAULT '',
 			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			UNIQUE(user_id, provider, provider_playlist_id)
 		)`,
@@ -108,6 +124,7 @@ func migrate(conn *sql.DB) error {
 			artist_name TEXT NOT NULL DEFAULT '',
 			album_name TEXT NOT NULL DEFAULT '',
 			duration_ms INTEGER NOT NULL DEFAULT 0,
+			album_image_url TEXT NOT NULL DEFAULT '',
 			added_at TIMESTAMP,
 			UNIQUE(user_id, provider, provider_track_id)
 		)`,
@@ -120,6 +137,7 @@ func migrate(conn *sql.DB) error {
 			provider_album_id TEXT NOT NULL,
 			album_name TEXT NOT NULL DEFAULT '',
 			artist_name TEXT NOT NULL DEFAULT '',
+			image_url TEXT NOT NULL DEFAULT '',
 			added_at TIMESTAMP,
 			UNIQUE(user_id, provider, provider_album_id)
 		)`,

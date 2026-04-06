@@ -3,7 +3,10 @@
 <section class="dash">
   <header class="dash-head">
     <h1>Your Playlists</h1>
-    <a class="btn ghost small" href="/dashboard">&larr; Dashboard</a>
+    <div>
+      <a class="btn ghost small" href="/library/playlists/export">Export CSV</a>
+      <a class="btn ghost small" href="/dashboard">&larr; Dashboard</a>
+    </div>
   </header>
 
   {{if .Playlists}}
@@ -12,6 +15,7 @@
     <table class="lib-table" id="playlists-table">
       <thead>
         <tr>
+          <th class="art-col"></th>
           <th data-sort="text">Name</th>
           <th data-sort="text">Owner</th>
           <th data-sort="num" class="num-col">Tracks</th>
@@ -22,7 +26,8 @@
       <tbody>
         {{range .Playlists}}
         <tr>
-          <td><a href="/library/playlists/{{.ID}}">{{.Name}}</a></td>
+          <td class="art-col">{{if .ImageURL}}<img src="{{.ImageURL}}" width="40" height="40" loading="lazy" alt="">{{else}}<div class="art-placeholder"></div>{{end}}</td>
+          <td><a href="https://open.spotify.com/playlist/{{.ProviderPlaylistID}}" target="_blank" rel="noopener">{{.Name}} <span class="ext-icon">&#8599;</span></a></td>
           <td class="dim">{{.OwnerName}}</td>
           <td class="num-col" data-val="{{.TrackCount}}">{{.TrackCount}}</td>
           <td class="dim">{{if .IsPublic}}Public{{else}}Private{{end}}{{if .IsCollaborative}} · Collab{{end}}</td>

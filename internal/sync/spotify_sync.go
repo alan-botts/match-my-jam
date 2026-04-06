@@ -93,17 +93,24 @@ func (s *SpotifySyncer) doRun(ctx context.Context, userID int64, playlistCount, 
 
 func (s *SpotifySyncer) upsertPlaylists(ctx context.Context, userID int64, pls []spotify.PlaylistSummary, client *spotify.Client) error {
 	for _, p := range pls {
+		imageURL := ""
+		if len(p.Images) > 0 {
+			imageURL = p.Images[len(p.Images)-1].URL // last = smallest
+			if len(p.Images) > 1 {
+				imageURL = p.Images[len(p.Images)-1].URL
+			}
+		}
 		var playlistID int64
 		err := s.Store.DB.QueryRowContext(ctx,
-			`INSERT INTO playlists (user_id, provider, provider_playlist_id, name, description, owner_name, track_count, is_public, is_collaborative, snapshot_id, updated_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+			`INSERT INTO playlists (user_id, provider, provider_playlist_id, name, description, owner_name, track_count, is_public, is_collaborative, snapshot_id, image_url, updated_at)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 			 ON CONFLICT(user_id, provider, provider_playlist_id) DO UPDATE SET
 			   name=excluded.name, description=excluded.description, owner_name=excluded.owner_name,
 			   track_count=excluded.track_count, is_public=excluded.is_public, is_collaborative=excluded.is_collaborative,
-			   snapshot_id=excluded.snapshot_id, updated_at=CURRENT_TIMESTAMP
+			   snapshot_id=excluded.snapshot_id, image_url=excluded.image_url, updated_at=CURRENT_TIMESTAMP
 			 RETURNING id`,
 			userID, spotify.Provider, p.ID, p.Name, p.Description, p.Owner.DisplayName, p.Tracks.Total,
-			boolToInt(p.Public), boolToInt(p.Collaborative), p.SnapshotID,
+			boolToInt(p.Public), boolToInt(p.Collaborative), p.SnapshotID, imageURL,
 		).Scan(&playlistID)
 		if err != nil {
 			return err
@@ -187,8 +194,8 @@ func (s *SpotifySyncer) replaceLiked(ctx context.Context, userID int64, items []
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx,
-		`INSERT OR IGNORE INTO liked_tracks (user_id, provider, provider_track_id, track_name, artist_name, album_name, duration_ms, added_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT OR IGNORE INTO liked_tracks (user_id, provider, provider_track_id, track_name, artist_name, album_name, duration_ms, album_image_url, added_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 	)
 	if err != nil {
 		return err
@@ -198,7 +205,11 @@ func (s *SpotifySyncer) replaceLiked(ctx context.Context, userID int64, items []
 		if it.Track.ID == "" {
 			continue
 		}
-		if _, err := stmt.ExecContext(ctx, userID, spotify.Provider, it.Track.ID, it.Track.Name, it.Track.ArtistNames(), it.Track.Album.Name, it.Track.DurationMs, nullTime(parseTime(it.AddedAt))); err != nil {
+		albumImg := ""
+		if len(it.Track.Album.Images) > 0 {
+			albumImg = it.Track.Album.Images[len(it.Track.Album.Images)-1].URL
+		}
+		if _, err := stmt.ExecContext(ctx, userID, spotify.Provider, it.Track.ID, it.Track.Name, it.Track.ArtistNames(), it.Track.Album.Name, it.Track.DurationMs, albumImg, nullTime(parseTime(it.AddedAt))); err != nil {
 			return err
 		}
 	}
@@ -215,7 +226,7 @@ func (s *SpotifySyncer) replaceAlbums(ctx context.Context, userID int64, items [
 		return err
 	}
 	stmt, err := tx.PrepareContext(ctx,
-		`INSERT OR IGNORE INTO saved_albums (user_id, provider, provider_album_id, album_name, artist_name, added_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		`INSERT OR IGNORE INTO saved_albums (user_id, provider, provider_album_id, album_name, artist_name, image_url, added_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 	)
 	if err != nil {
 		return err
@@ -232,7 +243,11 @@ func (s *SpotifySyncer) replaceAlbums(ctx context.Context, userID int64, items [
 				artist += ", " + a.Name
 			}
 		}
-		if _, err := stmt.ExecContext(ctx, userID, spotify.Provider, it.Album.ID, it.Album.Name, artist, nullTime(parseTime(it.AddedAt))); err != nil {
+		albumImg := ""
+		if len(it.Album.Images) > 0 {
+			albumImg = it.Album.Images[len(it.Album.Images)-1].URL
+		}
+		if _, err := stmt.ExecContext(ctx, userID, spotify.Provider, it.Album.ID, it.Album.Name, artist, albumImg, nullTime(parseTime(it.AddedAt))); err != nil {
 			return err
 		}
 	}
