@@ -72,23 +72,34 @@ func (s *Server) handleLiked(w http.ResponseWriter, r *http.Request) {
 	uid := currentUserID(r)
 	user, _ := s.Store.GetUser(r.Context(), uid)
 
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	q := r.URL.Query()
+
+	page, _ := strconv.Atoi(q.Get("page"))
 	if page < 1 {
 		page = 1
 	}
-	offset := (page - 1) * likedPerPage
 
-	total, _ := s.Store.CountLikedTracks(r.Context(), uid)
+	sortCol := q.Get("sort")
+	if sortCol == "" {
+		sortCol = "added"
+	}
+	sortDir := q.Get("dir")
+	if sortDir != "asc" && sortDir != "desc" {
+		sortDir = "desc"
+	}
+	search := q.Get("q")
+
+	total, _ := s.Store.CountLikedTracks(r.Context(), uid, search)
 	totalPages := (total + likedPerPage - 1) / likedPerPage
 	if totalPages < 1 {
 		totalPages = 1
 	}
 	if page > totalPages {
 		page = totalPages
-		offset = (page - 1) * likedPerPage
 	}
+	offset := (page - 1) * likedPerPage
 
-	tracks, err := s.Store.UserLikedTracksPaged(r.Context(), uid, likedPerPage, offset)
+	tracks, err := s.Store.UserLikedTracksPaged(r.Context(), uid, likedPerPage, offset, sortCol, sortDir, search)
 	if err != nil {
 		log.Printf("liked tracks: %v", err)
 		http.Error(w, "db error", http.StatusInternalServerError)
@@ -109,6 +120,9 @@ func (s *Server) handleLiked(w http.ResponseWriter, r *http.Request) {
 		"HasNext":       page < totalPages,
 		"PrevPage":      page - 1,
 		"NextPage":      page + 1,
+		"Sort":          sortCol,
+		"Dir":           sortDir,
+		"Search":        search,
 	})
 }
 

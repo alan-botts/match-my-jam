@@ -11,7 +11,11 @@
 
   {{if .Tracks}}
   <div class="lib-meta">
-    <input class="lib-search" type="text" data-table="liked-table" placeholder="Search this page…">
+    <form id="search-form" method="get" action="/library/liked" style="display:inline">
+      <input type="hidden" name="sort" value="{{.Sort}}">
+      <input type="hidden" name="dir" value="{{.Dir}}">
+      <input id="search-input" class="lib-search" type="text" name="q" value="{{.Search}}" placeholder="Search all tracks…">
+    </form>
     <span class="dim">{{.TotalTracks}} tracks · {{.TotalDuration}} · Page {{.Page}} of {{.TotalPages}}</span>
   </div>
   <div class="card">
@@ -20,12 +24,15 @@
         <tr>
           <th class="art-col"></th>
           <th class="preview-col"></th>
-          <th data-sort="text">Track</th>
-          <th data-sort="text">Artist</th>
-          <th data-sort="text">Album</th>
-          <th data-sort="text">Genre</th>
-          <th data-sort="num" class="num-col">Duration</th>
-          <th data-sort="date">Added</th>
+          {{- $sort := .Sort -}}
+          {{- $dir := .Dir -}}
+          {{- $search := .Search -}}
+          <th><a href="/library/liked?sort=track&amp;dir={{if and (eq $sort "track") (eq $dir "asc")}}desc{{else}}asc{{end}}&amp;page=1{{if $search}}&amp;q={{$search}}{{end}}">Track{{if eq $sort "track"}}{{if eq $dir "asc"}} &#8593;{{else}} &#8595;{{end}}{{end}}</a></th>
+          <th><a href="/library/liked?sort=artist&amp;dir={{if and (eq $sort "artist") (eq $dir "asc")}}desc{{else}}asc{{end}}&amp;page=1{{if $search}}&amp;q={{$search}}{{end}}">Artist{{if eq $sort "artist"}}{{if eq $dir "asc"}} &#8593;{{else}} &#8595;{{end}}{{end}}</a></th>
+          <th><a href="/library/liked?sort=album&amp;dir={{if and (eq $sort "album") (eq $dir "asc")}}desc{{else}}asc{{end}}&amp;page=1{{if $search}}&amp;q={{$search}}{{end}}">Album{{if eq $sort "album"}}{{if eq $dir "asc"}} &#8593;{{else}} &#8595;{{end}}{{end}}</a></th>
+          <th><a href="/library/liked?sort=genre&amp;dir={{if and (eq $sort "genre") (eq $dir "asc")}}desc{{else}}asc{{end}}&amp;page=1{{if $search}}&amp;q={{$search}}{{end}}">Genre{{if eq $sort "genre"}}{{if eq $dir "asc"}} &#8593;{{else}} &#8595;{{end}}{{end}}</a></th>
+          <th class="num-col"><a href="/library/liked?sort=duration&amp;dir={{if and (eq $sort "duration") (eq $dir "asc")}}desc{{else}}asc{{end}}&amp;page=1{{if $search}}&amp;q={{$search}}{{end}}">Duration{{if eq $sort "duration"}}{{if eq $dir "asc"}} &#8593;{{else}} &#8595;{{end}}{{end}}</a></th>
+          <th><a href="/library/liked?sort=added&amp;dir={{if and (eq $sort "added") (eq $dir "asc")}}desc{{else}}asc{{end}}&amp;page=1{{if $search}}&amp;q={{$search}}{{end}}">Added{{if eq $sort "added"}}{{if eq $dir "asc"}} &#8593;{{else}} &#8595;{{end}}{{end}}</a></th>
         </tr>
       </thead>
       <tbody>
@@ -45,17 +52,32 @@
     </table>
   </div>
   <nav class="pagination">
-    {{if .HasPrev}}<a class="btn ghost small" href="/library/liked?page={{.PrevPage}}">&larr; Previous</a>{{else}}<span class="btn ghost small" style="opacity:0.3">&larr; Previous</span>{{end}}
+    {{if .HasPrev}}<a class="btn ghost small" href="/library/liked?page={{.PrevPage}}&amp;sort={{.Sort}}&amp;dir={{.Dir}}{{if .Search}}&amp;q={{.Search}}{{end}}">&larr; Previous</a>{{else}}<span class="btn ghost small" style="opacity:0.3">&larr; Previous</span>{{end}}
     <span class="dim">Page {{.Page}} of {{.TotalPages}}</span>
-    {{if .HasNext}}<a class="btn ghost small" href="/library/liked?page={{.NextPage}}">Next &rarr;</a>{{else}}<span class="btn ghost small" style="opacity:0.3">Next &rarr;</span>{{end}}
+    {{if .HasNext}}<a class="btn ghost small" href="/library/liked?page={{.NextPage}}&amp;sort={{.Sort}}&amp;dir={{.Dir}}{{if .Search}}&amp;q={{.Search}}{{end}}">Next &rarr;</a>{{else}}<span class="btn ghost small" style="opacity:0.3">Next &rarr;</span>{{end}}
   </nav>
   {{else}}
   <div class="card">
+    {{if .Search}}
+    <p class="muted">No tracks match "{{.Search}}". <a href="/library/liked">Clear search</a></p>
+    {{else}}
     <p class="muted">No liked tracks synced yet. Try syncing your Spotify library from the dashboard.</p>
+    {{end}}
   </div>
   {{end}}
 </section>
-<script src="/static/table.js"></script>
+<script>
+(function() {
+  var form = document.getElementById('search-form');
+  var input = document.getElementById('search-input');
+  if (!form || !input) return;
+  var timer;
+  input.addEventListener('input', function() {
+    clearTimeout(timer);
+    timer = setTimeout(function() { form.submit(); }, 300);
+  });
+})();
+</script>
 <script src="/static/preview.js"></script>
 <script src="/static/genre.js"></script>
 {{template "footer" .}}

@@ -110,21 +110,46 @@ func (s *Store) PlaylistTracks(ctx context.Context, playlistID int64) ([]Playlis
 	return out, rows.Err()
 }
 
-func (s *Store) UserLikedTracks(ctx context.Context, userID int64) ([]LikedTrack, error) {
-	return s.UserLikedTracksPaged(ctx, userID, -1, 0)
+// likedSortCols maps user-facing sort keys to actual SQL column names.
+var likedSortCols = map[string]string{
+	"track":    "track_name",
+	"artist":   "artist_name",
+	"album":    "album_name",
+	"genre":    "genre",
+	"duration": "duration_ms",
+	"added":    "added_at",
 }
 
-func (s *Store) UserLikedTracksPaged(ctx context.Context, userID int64, limit, offset int) ([]LikedTrack, error) {
+func (s *Store) UserLikedTracks(ctx context.Context, userID int64) ([]LikedTrack, error) {
+	return s.UserLikedTracksPaged(ctx, userID, -1, 0, "added", "desc", "")
+}
+
+func (s *Store) UserLikedTracksPaged(ctx context.Context, userID int64, limit, offset int, sortCol, sortDir, search string) ([]LikedTrack, error) {
+	col, ok := likedSortCols[sortCol]
+	if !ok {
+		col = "added_at"
+	}
+	if sortDir != "asc" && sortDir != "desc" {
+		sortDir = "desc"
+	}
+
+	args := []interface{}{userID}
+	where := `user_id = ?`
+	if search != "" {
+		where += ` AND (track_name LIKE ? OR artist_name LIKE ? OR album_name LIKE ? OR genre LIKE ?)`
+		wild := "%" + search + "%"
+		args = append(args, wild, wild, wild, wild)
+	}
+
 	q := `SELECT provider_track_id, track_name, artist_name, album_name, duration_ms, album_image_url, genre, preview_url, added_at
-		 FROM liked_tracks WHERE user_id = ? ORDER BY added_at DESC`
-	var rows *sql.Rows
-	var err error
+		 FROM liked_tracks WHERE ` + where + ` ORDER BY ` + col + ` ` + sortDir
+
 	if limit > 0 {
 		q += ` LIMIT ? OFFSET ?`
-		rows, err = s.DB.QueryContext(ctx, q, userID, limit, offset)
-	} else {
-		rows, err = s.DB.QueryContext(ctx, q, userID)
+		args = append(args, limit, offset)
 	}
+
+	rows, err := s.DB.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -145,9 +170,16 @@ func (s *Store) UserLikedTracksPaged(ctx context.Context, userID int64, limit, o
 	return out, rows.Err()
 }
 
-func (s *Store) CountLikedTracks(ctx context.Context, userID int64) (int, error) {
+func (s *Store) CountLikedTracks(ctx context.Context, userID int64, search string) (int, error) {
+	args := []interface{}{userID}
+	where := `user_id = ?`
+	if search != "" {
+		where += ` AND (track_name LIKE ? OR artist_name LIKE ? OR album_name LIKE ? OR genre LIKE ?)`
+		wild := "%" + search + "%"
+		args = append(args, wild, wild, wild, wild)
+	}
 	var n int
-	err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM liked_tracks WHERE user_id = ?`, userID).Scan(&n)
+	err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM liked_tracks WHERE `+where, args...).Scan(&n)
 	return n, err
 }
 
