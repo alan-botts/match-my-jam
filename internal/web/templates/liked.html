@@ -11,8 +11,8 @@
 
   {{if .Tracks}}
   <div class="lib-meta">
-    <input class="lib-search" type="text" data-table="liked-table" placeholder="Search tracks, artists, albums…">
-    <span class="dim">Total: {{.TotalDuration}}</span>
+    <input class="lib-search" type="text" data-table="liked-table" placeholder="Search this page…">
+    <span class="dim">{{.TotalTracks}} tracks · {{.TotalDuration}} · Page {{.Page}} of {{.TotalPages}}</span>
   </div>
   <div class="card">
     <table class="lib-table" id="liked-table">
@@ -44,6 +44,11 @@
       </tbody>
     </table>
   </div>
+  <nav class="pagination">
+    {{if .HasPrev}}<a class="btn ghost small" href="/library/liked?page={{.PrevPage}}">&larr; Previous</a>{{else}}<span class="btn ghost small" style="opacity:0.3">&larr; Previous</span>{{end}}
+    <span class="dim">Page {{.Page}} of {{.TotalPages}}</span>
+    {{if .HasNext}}<a class="btn ghost small" href="/library/liked?page={{.NextPage}}">Next &rarr;</a>{{else}}<span class="btn ghost small" style="opacity:0.3">Next &rarr;</span>{{end}}
+  </nav>
   {{else}}
   <div class="card">
     <p class="muted">No liked tracks synced yet. Try syncing your Spotify library from the dashboard.</p>

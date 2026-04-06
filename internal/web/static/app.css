@@ -245,3 +245,9 @@ th[data-dir="desc"] .sort-arrow { color: var(--accent-1); }
 }
 .preview-btn:hover { background: rgba(255,61,110,0.15); transform: scale(1.1); }
 .preview-btn.playing { background: rgba(255,61,110,0.2); }
+
+/* Pagination */
+.pagination {
+  display: flex; align-items: center; justify-content: center;
+  gap: 16px; margin-top: 18px;
+}

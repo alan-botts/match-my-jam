@@ -111,9 +111,20 @@ func (s *Store) PlaylistTracks(ctx context.Context, playlistID int64) ([]Playlis
 }
 
 func (s *Store) UserLikedTracks(ctx context.Context, userID int64) ([]LikedTrack, error) {
-	rows, err := s.DB.QueryContext(ctx,
-		`SELECT provider_track_id, track_name, artist_name, album_name, duration_ms, album_image_url, genre, preview_url, added_at
-		 FROM liked_tracks WHERE user_id = ? ORDER BY added_at DESC`, userID)
+	return s.UserLikedTracksPaged(ctx, userID, -1, 0)
+}
+
+func (s *Store) UserLikedTracksPaged(ctx context.Context, userID int64, limit, offset int) ([]LikedTrack, error) {
+	q := `SELECT provider_track_id, track_name, artist_name, album_name, duration_ms, album_image_url, genre, preview_url, added_at
+		 FROM liked_tracks WHERE user_id = ? ORDER BY added_at DESC`
+	var rows *sql.Rows
+	var err error
+	if limit > 0 {
+		q += ` LIMIT ? OFFSET ?`
+		rows, err = s.DB.QueryContext(ctx, q, userID, limit, offset)
+	} else {
+		rows, err = s.DB.QueryContext(ctx, q, userID)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +143,12 @@ func (s *Store) UserLikedTracks(ctx context.Context, userID int64) ([]LikedTrack
 		out = append(out, t)
 	}
 	return out, rows.Err()
+}
+
+func (s *Store) CountLikedTracks(ctx context.Context, userID int64) (int, error) {
+	var n int
+	err := s.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM liked_tracks WHERE user_id = ?`, userID).Scan(&n)
+	return n, err
 }
 
 func (s *Store) UserSavedAlbums(ctx context.Context, userID int64) ([]SavedAlbum, error) {

@@ -66,10 +66,29 @@ func (s *Server) handlePlaylistDetail(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+const likedPerPage = 100
+
 func (s *Server) handleLiked(w http.ResponseWriter, r *http.Request) {
 	uid := currentUserID(r)
 	user, _ := s.Store.GetUser(r.Context(), uid)
-	tracks, err := s.Store.UserLikedTracks(r.Context(), uid)
+
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * likedPerPage
+
+	total, _ := s.Store.CountLikedTracks(r.Context(), uid)
+	totalPages := (total + likedPerPage - 1) / likedPerPage
+	if totalPages < 1 {
+		totalPages = 1
+	}
+	if page > totalPages {
+		page = totalPages
+		offset = (page - 1) * likedPerPage
+	}
+
+	tracks, err := s.Store.UserLikedTracksPaged(r.Context(), uid, likedPerPage, offset)
 	if err != nil {
 		log.Printf("liked tracks: %v", err)
 		http.Error(w, "db error", http.StatusInternalServerError)
@@ -83,6 +102,13 @@ func (s *Server) handleLiked(w http.ResponseWriter, r *http.Request) {
 		"User":          user,
 		"Tracks":        tracks,
 		"TotalDuration": formatTotalDuration(totalMs),
+		"Page":          page,
+		"TotalPages":    totalPages,
+		"TotalTracks":   total,
+		"HasPrev":       page > 1,
+		"HasNext":       page < totalPages,
+		"PrevPage":      page - 1,
+		"NextPage":      page + 1,
 	})
 }
 
