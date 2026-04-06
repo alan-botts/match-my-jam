@@ -262,10 +262,13 @@ func (s *Server) handleSpotifyCallback(w http.ResponseWriter, r *http.Request) {
 
 	// Kick off an initial sync in the background.
 	go func(uid int64) {
+		log.Printf("sync starting user=%d (initial)", uid)
 		bg, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 		if err := s.SpotifySync.Run(bg, uid); err != nil {
 			log.Printf("initial sync user=%d: %v", uid, err)
+		} else {
+			log.Printf("sync complete user=%d (initial)", uid)
 		}
 	}(user.ID)
 
@@ -291,10 +294,13 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSyncSpotify(w http.ResponseWriter, r *http.Request) {
 	uid := currentUserID(r)
 	go func() {
+		log.Printf("sync starting user=%d (manual)", uid)
 		bg, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 		if err := s.SpotifySync.Run(bg, uid); err != nil {
 			log.Printf("manual sync user=%d: %v", uid, err)
+		} else {
+			log.Printf("sync complete user=%d (manual)", uid)
 		}
 	}()
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
@@ -306,13 +312,23 @@ func randomState() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
+var pacific *time.Location
+
+func init() {
+	var err error
+	pacific, err = time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		pacific = time.FixedZone("PST", -8*3600)
+	}
+}
+
 func funcs() template.FuncMap {
 	return template.FuncMap{
 		"fmtTime": func(t *time.Time) string {
 			if t == nil {
 				return "—"
 			}
-			return t.Format("Jan 2, 2006 3:04 PM")
+			return t.In(pacific).Format("Jan 2, 2006 3:04 PM")
 		},
 		"fmtDuration": func(ms int) string {
 			totalSec := ms / 1000
