@@ -21,13 +21,17 @@
           <strong>{{.Provider}}</strong>
           {{if .ProviderEmail}}<span class="muted"> · {{.ProviderEmail}}</span>{{end}}
         </div>
-        <form method="post" action="/settings/disconnect/{{.ID}}" class="inline">
-          <button class="ghost" type="submit">Disconnect</button>
-        </form>
+        <div class="row-btns">
+          {{if eq .Provider "spotify"}}<a class="btn ghost small" href="/auth/spotify/start">Refresh</a>{{end}}
+          {{if eq .Provider "google"}}<a class="btn ghost small" href="/auth/google/start">Refresh</a>{{end}}
+          <form method="post" action="/settings/disconnect/{{.ID}}" class="inline">
+            <button class="ghost" type="submit">Disconnect</button>
+          </form>
+        </div>
       </li>
       {{end}}
     </ul>
-    <p class="muted">Add more by logging in with another provider — same email auto-links.</p>
+    <p class="muted">Refresh re-authorizes and gets a fresh token without disconnecting. Add more providers — same email auto-links.</p>
     <div class="cta-row" style="margin-top:14px;justify-content:flex-start">
       <a class="btn ghost small" href="/auth/spotify/start">Link Spotify</a>
       <a class="btn ghost small" href="/auth/google/start">Link Google</a>
