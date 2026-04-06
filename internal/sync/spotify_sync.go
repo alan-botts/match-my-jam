@@ -144,9 +144,23 @@ func (s *SpotifySyncer) replacePlaylistTracks(ctx context.Context, playlistID in
 	defer stmt.Close()
 	for i, t := range tracks {
 		if t.Track == nil {
+			// Null item — track was removed or is unavailable.
 			continue
 		}
-		if _, err := stmt.ExecContext(ctx, playlistID, i, t.Track.ID, t.Track.Name, t.Track.ArtistNames(), t.Track.Album.Name, t.Track.DurationMs, nullTime(parseTime(t.AddedAt))); err != nil {
+		if t.Track.IsEpisode() {
+			// Podcast episodes are not music tracks; skip them.
+			continue
+		}
+		// Local files have no Spotify ID but may have name/artist/album.
+		// We store them with an empty provider_track_id so they still
+		// appear in the playlist view. The is_local flag on the outer
+		// PlaylistTrack or the inner Track can both indicate this.
+		trackID := t.Track.ID
+		if trackID == "" && !t.IsLocal && !t.Track.IsLocal {
+			// No ID and not a local file — skip unknown item.
+			continue
+		}
+		if _, err := stmt.ExecContext(ctx, playlistID, i, trackID, t.Track.Name, t.Track.ArtistNames(), t.Track.Album.Name, t.Track.DurationMs, nullTime(parseTime(t.AddedAt))); err != nil {
 			return err
 		}
 	}

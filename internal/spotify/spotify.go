@@ -107,20 +107,64 @@ func (c *Client) AllPlaylists(ctx context.Context) ([]PlaylistSummary, error) {
 	return out, nil
 }
 
+// PlaylistTrack represents a single entry in a playlist's item list.
+// Spotify renamed the nested field from "track" to "item" in Feb 2026;
+// we accept both via custom unmarshalling for backward compatibility.
 type PlaylistTrack struct {
 	AddedAt string `json:"added_at"`
-	Track   *Track `json:"track"`
+	IsLocal bool   `json:"is_local"`
+	Track   *Track `json:"-"` // populated from "item" or legacy "track"
+}
+
+// UnmarshalJSON handles both the new "item" field and the legacy "track" field.
+func (pt *PlaylistTrack) UnmarshalJSON(data []byte) error {
+	// Use an alias to avoid infinite recursion.
+	type Alias struct {
+		AddedAt string          `json:"added_at"`
+		IsLocal bool            `json:"is_local"`
+		Item    json.RawMessage `json:"item"`
+		Track   json.RawMessage `json:"track"`
+	}
+	var a Alias
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+	pt.AddedAt = a.AddedAt
+	pt.IsLocal = a.IsLocal
+
+	// Prefer "item" (new API), fall back to "track" (legacy).
+	raw := a.Item
+	if len(raw) == 0 || string(raw) == "null" {
+		raw = a.Track
+	}
+	if len(raw) == 0 || string(raw) == "null" {
+		pt.Track = nil
+		return nil
+	}
+	var t Track
+	if err := json.Unmarshal(raw, &t); err != nil {
+		return err
+	}
+	pt.Track = &t
+	return nil
 }
 
 type Track struct {
 	ID         string   `json:"id"`
 	Name       string   `json:"name"`
+	Type       string   `json:"type"`       // "track" or "episode"
+	IsLocal    bool     `json:"is_local"`
 	DurationMs int      `json:"duration_ms"`
 	Artists    []Artist `json:"artists"`
 	Album      struct {
 		Name string `json:"name"`
 		ID   string `json:"id"`
 	} `json:"album"`
+}
+
+// IsEpisode reports whether this item is a podcast episode rather than a music track.
+func (t *Track) IsEpisode() bool {
+	return t != nil && t.Type == "episode"
 }
 
 type Artist struct {
@@ -141,7 +185,15 @@ func (t *Track) ArtistNames() string {
 
 func (c *Client) PlaylistTracks(ctx context.Context, playlistID string) ([]PlaylistTrack, error) {
 	var out []PlaylistTrack
-	next := fmt.Sprintf("https://api.spotify.com/v1/playlists/%s/tracks?limit=100&fields=next,items(added_at,track(id,name,duration_ms,artists(id,name),album(id,name)))", url.PathEscape(playlistID))
+	// Use the new /items endpoint (Feb 2026 API change) and request fields
+	// that let us distinguish tracks, episodes, and local files.
+	// We request both "item" (new) and "track" (legacy fallback) so parsing
+	// works regardless of which field the API returns.
+	next := fmt.Sprintf(
+		"https://api.spotify.com/v1/playlists/%s/items?limit=100&fields=%s",
+		url.PathEscape(playlistID),
+		url.QueryEscape("next,items(added_at,is_local,item(id,name,type,is_local,duration_ms,artists(id,name),album(id,name)),track(id,name,type,is_local,duration_ms,artists(id,name),album(id,name)))"),
+	)
 	for next != "" {
 		var page Paging
 		if err := c.getJSON(ctx, next, &page); err != nil {
