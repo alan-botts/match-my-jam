@@ -3,6 +3,7 @@ package web
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -65,6 +66,10 @@ func (s *Server) handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = s.Sessions.Set(w, session.Data{UserID: user.ID})
 	s.applyInviteCookie(w, r, user.ID)
+	if joinedJamID := s.applyJamCookie(w, r, user.ID); joinedJamID != nil {
+		http.Redirect(w, r, "/jams/"+strconv.FormatInt(*joinedJamID, 10)+"?flash=joined+jam", http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 

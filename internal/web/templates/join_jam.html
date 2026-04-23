@@ -1,0 +1,13 @@
+{{define "join_jam.html"}}
+{{template "header" .}}
+<section class="hero">
+  <h1>Join <span class="grad">{{.Jam.Name}}</span>.</h1>
+  <p class="sub">Sign in and you’ll join this jam session. Then everyone in the session can see the music overlaps for this group.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="/auth/spotify/start">Continue with Spotify</a>
+    <a class="btn ghost" href="/auth/google/start">Continue with Google</a>
+  </div>
+  <p class="fine">Your data stays in your account. We never post on your behalf.</p>
+</section>
+{{template "footer" .}}
+{{end}}

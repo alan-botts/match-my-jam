@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -74,10 +75,15 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/auth/google/callback", s.handleGoogleCallback)
 
 	r.Get("/join/{token}", s.handleJoin)
+	r.Get("/jams/join/{token}", s.handleJoinJam)
 
 	r.Group(func(r chi.Router) {
 		r.Use(s.requireAuth)
 		r.Get("/dashboard", s.handleDashboard)
+		r.Get("/jams", s.handleJams)
+		r.Get("/jams/new", s.handleNewJam)
+		r.Post("/jams", s.handleCreateJam)
+		r.Get("/jams/{id}", s.handleJamDetail)
 		r.Post("/sync/spotify", s.handleSyncSpotify)
 
 		r.Get("/invite", s.handleInvite)
@@ -160,6 +166,10 @@ var defaultTitles = map[string]string{
 	"settings.html":        "Settings · Match My Jam",
 	"invite.html":          "Invite · Match My Jam",
 	"join.html":            "Join Match My Jam",
+	"jams.html":            "Jams · Match My Jam",
+	"new_jam.html":         "Start a Jam · Match My Jam",
+	"jam.html":             "Jam · Match My Jam",
+	"join_jam.html":        "Join a Jam · Match My Jam",
 	"playlists.html":       "Playlists · Match My Jam",
 	"playlist_detail.html": "Playlist · Match My Jam",
 	"liked.html":           "Liked Tracks · Match My Jam",
@@ -185,7 +195,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	s.Sessions.Clear(w)
 	// Nuke every app cookie so re-auth starts from a clean slate.
-	for _, name := range []string{stateCookieName, googleStateCookie, inviteCookieName} {
+	for _, name := range []string{stateCookieName, googleStateCookie, inviteCookieName, jamCookieName} {
 		http.SetCookie(w, &http.Cookie{Name: name, Value: "", Path: "/", MaxAge: -1})
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -259,6 +269,7 @@ func (s *Server) handleSpotifyCallback(w http.ResponseWriter, r *http.Request) {
 		log.Printf("set session: %v", err)
 	}
 	s.applyInviteCookie(w, r, user.ID)
+	joinedJamID := s.applyJamCookie(w, r, user.ID)
 
 	// Kick off an initial sync in the background.
 	go func(uid int64) {
@@ -272,6 +283,10 @@ func (s *Server) handleSpotifyCallback(w http.ResponseWriter, r *http.Request) {
 		}
 	}(user.ID)
 
+	if joinedJamID != nil {
+		http.Redirect(w, r, "/jams/"+strconv.FormatInt(*joinedJamID, 10)+"?flash=joined+jam", http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
 }
 

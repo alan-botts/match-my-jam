@@ -1,0 +1,72 @@
+{{define "jam.html"}}
+{{template "header" .}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>{{.Jam.Name}}</h1>
+    <a class="btn ghost small" href="/jams">&larr; All jams</a>
+  </header>
+
+  {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+  <section class="card">
+    <h3>Invite people to this jam</h3>
+    <p class="muted">Anyone with this link can join this specific session.</p>
+    <div class="invite-link">
+      <input id="jam-link" readonly value="{{.JoinURL}}" aria-label="Jam join link">
+      <button class="btn primary small" id="copy-jam-btn" type="button">Copy link</button>
+      <span class="muted" id="copy-jam-status"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Members</h3>
+    {{if .Jam.Members}}
+    <ul class="friend-list compact-list">
+      {{range .Jam.Members}}
+      <li><strong>{{.User.DisplayName}}</strong><span class="muted">{{.User.Email}}</span></li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="muted">No one has joined yet.</p>
+    {{end}}
+  </section>
+
+  <section class="card">
+    <h3>Pairwise overlaps in this jam</h3>
+    {{if .Pairs}}
+    <ul class="friend-list">
+      {{range .Pairs}}
+      <li>
+        <div>
+          <strong>{{.A.DisplayName}} × {{.B.DisplayName}}</strong>
+          <span class="muted"> · {{len .Overlap.LikedTracks}} shared likes · {{len .Overlap.Albums}} albums · {{len .Overlap.PlaylistHits}} playlist tracks</span>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}
+    <p class="muted">Invite at least one more person. Once libraries sync, this page will show what each pair shares.</p>
+    {{end}}
+  </section>
+</section>
+<script>
+(function() {
+  var btn = document.getElementById('copy-jam-btn');
+  var input = document.getElementById('jam-link');
+  var status = document.getElementById('copy-jam-status');
+  if (!btn || !input) return;
+  btn.addEventListener('click', function() {
+    var link = input.value;
+    navigator.clipboard.writeText(link).then(function() {
+      status.textContent = 'Copied.';
+      input.select();
+    }).catch(function() {
+      input.select();
+      document.execCommand('copy');
+      status.textContent = 'Copied.';
+    });
+  });
+})();
+</script>
+{{template "footer" .}}
+{{end}}

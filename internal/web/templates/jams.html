@@ -1,0 +1,35 @@
+{{define "jams.html"}}
+{{template "header" .}}
+<section class="dash">
+  <header class="dash-head">
+    <h1>Jam sessions</h1>
+    <a class="btn primary small" href="/jams/new">Start new jam</a>
+  </header>
+
+  {{if .Flash}}<div class="flash">{{.Flash}}</div>{{end}}
+
+  <section class="card jam-start-card">
+    <h3>Make separate listening circles</h3>
+    <p class="muted">Create a jam for each group, then share its join link. Kyle + Alyssa can have one jam while Kyle + Alyssa + Sam have another.</p>
+  </section>
+
+  {{if .Jams}}
+  <ul class="friend-list">
+    {{range .Jams}}
+    <li>
+      <div>
+        <strong>{{.Name}}</strong>
+        <span class="muted"> · {{len .Members}} members · started by {{.Owner.DisplayName}}</span>
+      </div>
+      <a class="btn ghost small" href="/jams/{{.ID}}">Open</a>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <section class="card">
+    <p class="muted">No jam sessions yet. Start one, copy the join link, and invite people in.</p>
+  </section>
+  {{end}}
+</section>
+{{template "footer" .}}
+{{end}}

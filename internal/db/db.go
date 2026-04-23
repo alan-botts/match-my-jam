@@ -201,6 +201,25 @@ func migrate(conn *sql.DB) error {
 			error TEXT NOT NULL DEFAULT ''
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_sync_runs_user ON sync_runs(user_id, started_at DESC)`,
+
+		`CREATE TABLE IF NOT EXISTS jam_sessions (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			name TEXT NOT NULL DEFAULT '',
+			token TEXT NOT NULL DEFAULT '',
+			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_jam_sessions_token ON jam_sessions(token) WHERE token != ''`,
+		`CREATE INDEX IF NOT EXISTS idx_jam_sessions_owner ON jam_sessions(owner_id, created_at DESC)`,
+
+		`CREATE TABLE IF NOT EXISTS jam_members (
+			jam_id INTEGER NOT NULL REFERENCES jam_sessions(id) ON DELETE CASCADE,
+			user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY (jam_id, user_id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_jam_members_user ON jam_members(user_id, joined_at DESC)`,
 	}
 	for _, s := range stmts {
 		if _, err := conn.Exec(s); err != nil {

@@ -1,0 +1,12 @@
+{{define "new_jam.html"}}
+{{template "header" .}}
+<section class="auth">
+  <h1>Start a new jam</h1>
+  <p class="sub">Give this listening circle a name. You’ll get a private join link to share with exactly this group.</p>
+  <form method="post" action="/jams" class="stack-form">
+    <input class="text-input" type="text" name="name" maxlength="80" placeholder="Friday night, road trip crew, Kyle + Alyssa…" autofocus>
+    <button class="btn primary" type="submit">Start jam</button>
+  </form>
+</section>
+{{template "footer" .}}
+{{end}}

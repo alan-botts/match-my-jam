@@ -251,3 +251,24 @@ th[data-dir="desc"] .sort-arrow { color: var(--accent-1); }
   display: flex; align-items: center; justify-content: center;
   gap: 16px; margin-top: 18px;
 }
+
+.start-jam-nav {
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+}
+.start-jam-nav:hover { color: #fff; filter: brightness(1.08); }
+.stack-form { display: flex; flex-direction: column; gap: 12px; }
+.text-input {
+  width: 100%; background: var(--bg-3); border: 1px solid var(--border);
+  color: var(--fg); padding: 14px 16px; border-radius: var(--radius-sm);
+  font-size: 16px; font-family: inherit;
+}
+.text-input:focus { outline: none; border-color: var(--accent-1); }
+.jam-start-card { border-color: rgba(255,61,110,0.28); }
+.compact-list li { justify-content: flex-start; gap: 10px; }
+@media (max-width: 760px) {
+  header.site { align-items: flex-start; gap: 14px; flex-direction: column; }
+  header.site nav { flex-wrap: wrap; gap: 10px; }
+}
